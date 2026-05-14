@@ -16,22 +16,39 @@ async function adicionarPosto() {
         endereco: endereco || "Sem endereço"
     };
 
-    // SALVA NO FIREBASE
-    const docRef = await fs.collection("postos").add(novoPosto);
+    try {
 
-    // SALVA LOCAL
-    db.postos.push({
-        id: docRef.id,
-        ...novoPosto
-    });
+        // SALVA NO FIREBASE
+        const docRef = await fs.collection("postos").add(novoPosto);
 
-    saveLocal();
-    renderPostos();
+        // SALVA LOCAL
+        db.postos.push({
+            id: docRef.id,
+            ...novoPosto
+        });
+
+        saveLocal();
+
+        renderPostos();
+
+        alert("Posto adicionado!");
+
+    } catch (erro) {
+
+        console.error(erro);
+
+        alert("Erro ao adicionar posto.");
+
+    }
+
 }
 
 function renderPostos() {
 
-    const busca = document.getElementById('busca-posto').value.toUpperCase();
+    const busca = document
+        .getElementById('busca-posto')
+        .value
+        .toUpperCase();
 
     const container = document.getElementById('lista-postos');
 
@@ -43,7 +60,7 @@ function renderPostos() {
 
         <div class="posto-item">
 
-            <div style="flex:1;" onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})">
+            <div style="flex:1;" onclick="editarPosto('${p.id}', ${i})">
 
                 <b>${p.nome}</b><br>
 
@@ -67,7 +84,7 @@ function renderPostos() {
                 ${db.perfil.admin ? `
 
                     <button
-                        onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})"
+                        onclick="editarPosto('${p.id}', ${i})"
                         class="btn-small"
                         style="background:#2563eb;"
                     >
@@ -75,7 +92,7 @@ function renderPostos() {
                     </button>
 
                     <button
-                        onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})"
+                        onclick="excluirPosto('${p.id}', ${i})"
                         class="btn-small"
                         style="background:#f85149;"
                     >
@@ -106,24 +123,24 @@ async function editarPosto(id, index) {
         posto.nome
     );
 
+    if (!novoNome) return;
+
     const novoEndereco = prompt(
         "Editar endereço:",
         posto.endereco
     );
 
-    if (novoNome) {
+    const dadosAtualizados = {
+        nome: novoNome.toUpperCase(),
+        endereco: novoEndereco || "Sem endereço"
+    };
 
-        const dadosAtualizados = {
-            nome: novoNome.toUpperCase(),
-            endereco: novoEndereco || "Sem endereço"
-        };
+    try {
 
         // ATUALIZA FIREBASE
-        if (id) {
-            await fs.collection("postos")
-                .doc(id)
-                .update(dadosAtualizados);
-        }
+        await fs.collection("postos")
+            .doc(id)
+            .update(dadosAtualizados);
 
         // ATUALIZA LOCAL
         db.postos[index] = {
@@ -136,7 +153,15 @@ async function editarPosto(id, index) {
         renderPostos();
 
         alert("Posto atualizado!");
+
+    } catch (erro) {
+
+        console.error(erro);
+
+        alert("Erro ao atualizar posto.");
+
     }
+
 }
 
 async function excluirPosto(id, index) {
@@ -149,17 +174,58 @@ async function excluirPosto(id, index) {
 
     if (!confirm("Excluir posto?")) return;
 
-    // REMOVE FIREBASE
-    if (id) {
+    try {
+
+        // REMOVE FIREBASE
         await fs.collection("postos")
             .doc(id)
             .delete();
+
+        // REMOVE LOCAL
+        db.postos.splice(index, 1);
+
+        saveLocal();
+
+        renderPostos();
+
+        alert("Posto removido!");
+
+    } catch (erro) {
+
+        console.error(erro);
+
+        alert("Erro ao excluir posto.");
+
     }
 
-    // REMOVE LOCAL
-    db.postos.splice(index, 1);
+}
 
-    saveLocal();
+// CARREGA TODOS OS POSTOS DO FIREBASE
+async function carregarPostos() {
 
-    renderPostos();
+    try {
+
+        const snapshot = await fs.collection("postos").get();
+
+        db.postos = [];
+
+        snapshot.forEach(doc => {
+
+            db.postos.push({
+                id: doc.id,
+                ...doc.data()
+            });
+
+        });
+
+        saveLocal();
+
+        renderPostos();
+
+    } catch (erro) {
+
+        console.error("Erro ao carregar postos:", erro);
+
+    }
+
 }
