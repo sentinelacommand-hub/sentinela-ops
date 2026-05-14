@@ -5,43 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SENTINELA OPS - CLOUD V2</title>
 
-    <script>
-        /* MONITORAMENTO GLOBAL DE ERROS */
-        (function () {
-            let ultimoAlertaErro = 0;
-            function alertaAmigavel(msg) {
-                const agora = Date.now();
-                if (agora - ultimoAlertaErro < 2500) return;
-                ultimoAlertaErro = agora;
-                alert(msg);
-            }
-            function restaurarFallbackVisual() {
-                try {
-                    const login = document.getElementById('view-login');
-                    const app = document.getElementById('app-content');
-                    if (window.firebase && firebase.auth && firebase.auth().currentUser) {
-                        if (app) app.classList.remove('hidden');
-                        if (login) login.classList.add('hidden');
-                        document.querySelectorAll('.container').forEach(v => v.classList.add('hidden'));
-                        const home = document.getElementById('view-home');
-                        if (home) home.classList.remove('hidden');
-                    } else {
-                        if (login) login.classList.remove('hidden');
-                        if (app) app.classList.add('hidden');
-                    }
-                } catch (e) { console.error('Erro no fallback:', e); }
-            }
-            window.onerror = (msg) => { alertaAmigavel('Erro de sistema: ' + msg); restaurarFallbackVisual(); return false; };
-            window.onunhandledrejection = (e) => { console.error(e.reason); restaurarFallbackVisual(); };
-            window.__sentinelaAlertaErro = alertaAmigavel;
-        })();
-    </script>
+  aqui
 
+<script>
+window.onerror = function(msg, url, line, col, error) {
+    alert(
+        "ERRO:\n" +
+        msg +
+        "\nLINHA: " + line +
+        "\nCOLUNA: " + col
+    );
+
+    console.error("ERRO DETALHADO:", {
+        mensagem: msg,
+        linha: line,
+        coluna: col,
+        erro: error
+    });
+};
+</script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
     <style>
         :root {
@@ -49,44 +36,32 @@
             --success: #238636; --bg: #0f1c2e; --card: #16233a;
             --text: #e0e7ff; --text-light: #a3bffa;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 75px; line-height: 1.4; overflow-x: hidden; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 75px; line-height: 1.4; }
         .header { background: var(--primary); color: white; padding: 14px 16px; border-bottom: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; font-weight: bold; }
         .header h1 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1.5px; }
-        .container { padding: 12px; max-width: 640px; margin: 0 auto; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .card { background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 18px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+        .container { padding: 12px; max-width: 640px; margin: 0 auto; }
+        .card { background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
         .card h3 { margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 3px solid var(--accent); color: var(--accent); font-size: 0.98rem; text-transform: uppercase; font-weight: 700; }
         label { display: block; font-size: 0.76rem; font-weight: 600; color: #94a3b8; margin: 14px 0 5px 0; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 13px 14px; background: #1e2a44; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 1rem; transition: border 0.2s; }
-        input:focus { border-color: var(--accent); outline: none; }
-        .btn { width: 100%; padding: 16px; margin-top: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.96rem; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn:active { transform: scale(0.98); }
+        input, select, textarea { width: 100%; padding: 13px 14px; background: #1e2a44; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 1rem; }
+        .btn { width: 100%; padding: 16px; margin-top: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.96rem; text-transform: uppercase; cursor: pointer; }
         .btn-primary { background: var(--accent); color: #0a192f; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-info { background: #2563eb; color: white; }
         .posto-item { background: #1e2a44; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
-        .btn-small { padding: 8px 12px; border-radius: 4px; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; color: white; text-transform: uppercase; }
+        .btn-small { padding: 6px 10px; border-radius: 4px; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; margin-left: 5px; color: white; text-transform: uppercase; }
         .ronda-entry { background: #1e2a44; padding: 13px; border-radius: 6px; margin-bottom: 9px; border-left: 5px solid var(--accent); font-size: 0.87rem; }
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); display: flex; border-top: 4px solid var(--accent); z-index: 1000; box-shadow: 0 -4px 10px rgba(0,0,0,0.3); }
-        .nav-item { flex: 1; text-align: center; padding: 12px 6px; color: #94a3b8; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
-        .nav-item.active { color: var(--accent); background: rgba(255,214,0,0.05); }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); display: flex; border-top: 4px solid var(--accent); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; padding: 10px 6px; color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
         .hidden { display: none !important; }
         .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
-        .check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px; border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; transition: 0.2s; }
-        .check-item.ok { border-color: var(--success); color: var(--success); background: rgba(35, 134, 54, 0.15); }
-        .dash-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: #1e2a44; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #334155; }
-        .stat-val { display: block; font-size: 1.4rem; font-weight: 800; color: var(--accent); }
-        .stat-lbl { font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; }
-        #loading-overlay { position: fixed; inset: 0; background: rgba(10,25,47,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,214,0,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px; border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; }
+        .check-item.ok { border-color: var(--success); color: var(--success); background: rgba(35, 134, 54, 0.2); }
     </style>
 </head>
 <body>
-
-<div id="loading-overlay" class="hidden"><div class="spinner"></div></div>
 
 <div id="view-login" class="container">
     <div style="text-align: center; padding: 50px 0;">
@@ -96,65 +71,89 @@
     <div class="card">
         <h3>ACESSO RESTRITO</h3>
         <label>Email Operacional</label>
-        <input type="email" id="login-email" placeholder="email@empresa.com">
+        <input type="email" id="login-email" placeholder="seu@email.com">
         <label>Senha</label>
         <input type="password" id="login-senha" placeholder="******">
-        <button class="btn btn-primary" onclick="App.Auth.login()">ENTRAR NO SISTEMA</button>
-        <button class="btn btn-info" onclick="App.Auth.cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR NOVA CONTA</button>
+        <button class="btn btn-primary" onclick="login()">ENTRAR</button>
+        <button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
     </div>
 </div>
 
 <div id="app-content" class="hidden">
     <div class="header">
         <h1>SENTINELA OPS</h1>
-        <div onclick="App.Auth.logout()" style="cursor:pointer; font-size: 1.2rem;">🚪</div>
+        <div onclick="logout()" style="cursor:pointer; font-size: 1.2rem;">🚪</div>
     </div>
 
     <div id="view-home" class="container">
-        <div class="card" onclick="App.UI.showView('rondas')" style="cursor:pointer; border-left: 5px solid var(--accent);">📍 <b>REGISTRO DE RONDAS</b></div>
-        <div class="card" onclick="App.UI.showView('postos')" style="cursor:pointer; border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
-        <div class="card" onclick="App.Rondas.gerarRelatorioPlantao()" style="cursor:pointer; border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
-        <div class="card" onclick="App.UI.showView('perfil')" style="cursor:pointer; border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
-        <div id="card-gerencial" class="card hidden" onclick="App.UI.showView('dashboard')" style="cursor:pointer; border-left: 5px solid #f59e0b; background: rgba(245,158,11,0.05);">📊 <b>DASHBOARD GERENCIAL</b></div>
+        <div class="card" onclick="showView('rondas')" style="cursor:pointer; border-left: 5px solid var(--accent);">📍 <b>REGISTRO DE RONDAS</b></div>
+        <div class="card" onclick="showView('postos')" style="cursor:pointer; border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
+        <div class="card" onclick="gerarRelatorioPlantao()" style="cursor:pointer; border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
+        <div class="card" onclick="showView('perfil')" style="cursor:pointer; border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
+
+        <!-- NOVO CARD HOME | EXCLUSIVO GERÊNCIA -->
+        <div id="card-dashboard-home" class="card hidden" onclick="showView('dashboard')" style="cursor:pointer; border-left: 5px solid #f59e0b;">📊 <b>DASHBOARD GERENCIAL</b></div>
     </div>
 
+    <!-- NOVA VIEW | DASHBOARD GERENCIAL -->
     <div id="view-dashboard" class="container hidden">
         <div class="card">
-            <h3>INDICADORES GLOBAIS</h3>
-            <div class="dash-stat-grid">
-                <div class="stat-box"><span id="dash-total-rondas" class="stat-val">0</span><span class="stat-lbl">Rondas Total</span></div>
-                <div class="stat-box"><span id="dash-total-postos" class="stat-val">0</span><span class="stat-lbl">Postos</span></div>
-                <div class="stat-box"><span id="dash-operadores-ativos" class="stat-val">0</span><span class="stat-lbl">Operadores</span></div>
-                <div class="stat-box"><span id="dash-atualizacao" class="stat-val" style="font-size: 0.9rem;">--:--</span><span class="stat-lbl">Atualizado</span></div>
+            <h3>DASHBOARD GERENCIAL</h3>
+            <div id="dashboard-status" style="font-size:0.82rem; color:#94a3b8; margin-bottom:14px;">
+                Carregando visão global da operação...
             </div>
+
+            <div id="dashboard-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Total de Rondas</div>
+                    <div style="font-size:1.4rem; font-weight:700; color:var(--accent); margin-top:4px;">--</div>
+                </div>
+                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Postos Visitados</div>
+                    <div style="font-size:1.4rem; font-weight:700; color:#60a5fa; margin-top:4px;">--</div>
+                </div>
+                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Operadores Ativos</div>
+                    <div style="font-size:1.4rem; font-weight:700; color:#22c55e; margin-top:4px;">--</div>
+                </div>
+                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Última Atualização</div>
+                    <div style="font-size:0.88rem; font-weight:700; color:#e0e7ff; margin-top:7px;">--</div>
+                </div>
+            </div>
+
+            <button class="btn btn-info" onclick="carregarDashboard()">🔄 ATUALIZAR DASHBOARD</button>
         </div>
+
         <div class="card">
             <h3>RANKING OPERACIONAL</h3>
-            <div id="dash-ranking"></div>
+            <div id="dashboard-ranking"></div>
         </div>
+
         <div class="card">
-            <h3>ÚLTIMAS RONDAS (REALTIME)</h3>
-            <div id="dash-ultimas-rondas"></div>
+            <h3>ÚLTIMAS RONDAS GLOBAIS</h3>
+            <div id="dashboard-ultimas-rondas"></div>
         </div>
     </div>
 
     <div id="view-rondas" class="container hidden">
         <div class="card">
             <h3>NOVA ATIVIDADE</h3>
-            <button id="btn-intervalo" class="btn btn-info" onclick="App.Rondas.gerenciarIntervalo()">☕ INICIAR INTERVALO</button>
+            <button id="btn-intervalo" class="btn btn-info" onclick="gerenciarIntervalo()">☕ INICIAR INTERVALO</button>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
                 <div><label>VTR</label><input type="text" id="r-placa" readonly></div>
-                <div><label>KM</label><input type="number" id="r-km" inputmode="numeric"></div>
+                <div><label>KM</label><input type="number" id="r-km"></div>
             </div>
             <label>Posto / Local</label>
             <select id="r-posto"></select>
             <label>Colaborador no Local</label>
-            <input type="text" id="r-func" placeholder="Nome do funcionário">
+            <input type="text" id="r-func" placeholder="Nome do colaborador">
             <label>Missão</label>
-            <select id="r-motivo" onchange="App.Rondas.toggleFiscalizacao()">
+            <select id="r-motivo" onchange="toggleFiscalizacao()">
                 <option value="Fiscalização">Fiscalização</option>
                 <option value="De base">De base</option>
                 <option value="Complemento">Complemento</option>
+                <option value="Cobertura">Cobertura</option>
                 <option value="Apoio">Apoio</option>
                 <option value="Deslocamento">Deslocamento</option>
                 <option value="Outros">Outros</option>
@@ -162,19 +161,19 @@
             <div id="sec-fiscalizacao">
                 <label>CHECKLIST TÁTICO</label>
                 <div class="checklist-grid" id="checklist">
-                    <div class="check-item ok" onclick="App.UI.toggleCheck(this)">APRESENTAÇÃO</div>
-                    <div class="check-item ok" onclick="App.UI.toggleCheck(this)">UNIFORME</div>
-                    <div class="check-item ok" onclick="App.UI.toggleCheck(this)">POSTURA</div>
-                    <div class="check-item ok" onclick="App.UI.toggleCheck(this)">LIVRO OCO.</div>
-                    <div class="check-item ok" onclick="App.UI.toggleCheck(this)">MATERIAL</div>
-                    <div class="check-item ok" onclick="App.UI.toggleCheck(this)">OUTROS</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">APRESENTAÇÃO</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">UNIFORME</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">POSTURA</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">LIVRO OCO.</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">MATERIAL</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">OUTROS</div>
                 </div>
             </div>
             <label>Observações</label>
             <textarea id="r-obs" rows="3" placeholder="Algo fora do normal?"></textarea>
-            <label>Comprovação Visual</label>
-            <input type="file" id="r-foto" accept="image/*" capture="environment" onchange="App.Utils.previewImage(this)">
-            <button class="btn btn-primary" onclick="App.Rondas.salvar()">✅ FINALIZAR E SINCRONIZAR</button>
+            <label>Foto de Comprovação</label>
+            <input type="file" id="r-foto" accept="image/*" capture="environment" onchange="previewImage(this)">
+            <button class="btn btn-primary" onclick="salvarRonda()">✅ FINALIZAR E GERAR CARD</button>
         </div>
         <div class="card">
             <h3>LOG DE ATIVIDADES (HOJE)</h3>
@@ -185,415 +184,605 @@
     <div id="view-postos" class="container hidden">
         <div class="card">
             <h3>GERENCIAR POSTOS</h3>
-            <button class="btn btn-primary" onclick="App.Postos.adicionar()">➕ NOVO POSTO</button>
-            <button class="btn btn-danger" onclick="App.Postos.zerarRondas()">🧹 ZERAR PLANTÃO ATUAL</button>
-            <input type="text" id="busca-posto" placeholder="Filtrar por nome..." onkeyup="App.Postos.render()" style="margin-top:15px;">
+            <button class="btn btn-primary" onclick="adicionarPosto()">➕ NOVO POSTO</button>
+            <button class="btn btn-danger" onclick="zerarRondasPlantao()">🧹 ZERAR RONDAS / INICIAR NOVO PLANTÃO</button>
+            <input type="text" id="busca-posto" placeholder="Filtrar postos..." onkeyup="renderPostos()" style="margin-top:15px;">
             <div id="lista-postos" style="margin-top:15px;"></div>
         </div>
     </div>
 
     <div id="view-perfil" class="container hidden">
         <div class="card">
-            <h3>MEU PERFIL OPERACIONAL</h3>
+            <h3>DADOS DO OPERADOR</h3>
             <label>Nome Completo</label><input type="text" id="p-nome">
-            <label>Matrícula</label><input type="text" id="p-matricula">
+            <label>Matrícula</label><input type="text" id="p-matrícula">
             <label>Cargo</label><input type="text" id="p-cargo">
             <label>Viatura (Placa)</label><input type="text" id="p-placa">
             <label>Empresa</label><input type="text" id="p-empresa">
             <label>CNPJ</label><input type="text" id="p-cnpj">
-            <button class="btn btn-primary" onclick="App.Perfil.salvar()">ATUALIZAR DADOS CLOUD</button>
+            <button class="btn btn-primary" onclick="salvarPerfil()">SALVAR NO CLOUD</button>
         </div>
     </div>
 
     <nav class="nav-bar">
-        <div class="nav-item active" id="nav-home" onclick="App.UI.showView('home')">🏠 HOME</div>
-        <div class="nav-item hidden" id="nav-dashboard" onclick="App.UI.showView('dashboard')">📊 DASH</div>
-        <div class="nav-item" id="nav-rondas" onclick="App.UI.showView('rondas')">📍 RONDAS</div>
-        <div class="nav-item" id="nav-postos" onclick="App.UI.showView('postos')">📋 POSTOS</div>
-        <div class="nav-item" id="nav-perfil" onclick="App.UI.showView('perfil')">👤 PERFIL</div>
+        <div class="nav-item active" id="nav-home" onclick="showView('home')">🏠 HOME</div>
+        <div class="nav-item" id="nav-rondas" onclick="showView('rondas')">📍 RONDAS</div>
+        <div class="nav-item" id="nav-postos" onclick="showView('postos')">📋 POSTOS</div>
+        <div class="nav-item" id="nav-perfil" onclick="showView('perfil')">👤 PERFIL</div>
+
+        <!-- BOTÃO OPCIONAL NO MENU INFERIOR | EXCLUSIVO GERÊNCIA -->
+        <div class="nav-item hidden" id="nav-dashboard" onclick="showView('dashboard')">📊 DASH</div>
     </nav>
 </div>
 
 <script>
-/* CORE MODULE */
-const App = {
-    Config: {
-        firebase: {
-            apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
-            authDomain: "sentinela-ops-profissional.firebaseapp.com",
-            projectId: "sentinela-ops-profissional",
-            storageBucket: "sentinela-ops-profissional.appspot.com",
-            messagingSenderId: "458111218365",
-            appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
-        }
-    },
-    Data: {
-        db: JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervalo: null },
-        tempFoto: "",
-        subs: []
-    },
-    
-    Init() {
-        firebase.initializeApp(this.Config.firebase);
-        this.fs = firebase.firestore();
-        this.auth = firebase.auth();
-        this.storage = firebase.storage();
-        
-        this.auth.onAuthStateChanged(user => {
-            if (user) {
-                App.UI.toggleLoading(true);
-                App.Data.uid = user.uid;
-                App.Sync.carregarTudo(user.uid);
-            } else {
-                App.UI.toggleLoading(false);
-                document.getElementById('view-login').classList.remove('hidden');
-                document.getElementById('app-content').classList.add('hidden');
-            }
-        });
+// --- CONFIG FIREBASE ---
+const firebaseConfig = {
+    apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
+    authDomain: "sentinela-ops-profissional.firebaseapp.com",
+    projectId: "sentinela-ops-profissional",
+    storageBucket: "sentinela-ops-profissional.firebasestorage.app",
+    messagingSenderId: "458111218365",
+    appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const fs = firebase.firestore();
+
+let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
+if (!db.dashboard) db.dashboard = { stats: null, ranking: [], ultimasRondas: [] };
+
+let fotoBase64 = "";
+
+// --- SISTEMA DE PERMISSÃO ---
+function isAdmin() {
+    return db.perfil && db.perfil.role === "admin";
+}
+
+// NOVO CONTROLE ADITIVO | GERÊNCIA
+function isGerencia() {
+    return db.perfil && (db.perfil.role === "admin" || db.perfil.role === "gerencia");
+}
+
+// NOVA INTEGRAÇÃO VISUAL | CARD HOME + MENU DASHBOARD
+function atualizarAcessoGerencialUI() {
+    const exibirDashboard = isGerencia();
+    const cardDashboardHome = document.getElementById('card-dashboard-home');
+    const navDashboard = document.getElementById('nav-dashboard');
+
+    if (cardDashboardHome) {
+        cardDashboardHome.classList.toggle('hidden', !exibirDashboard);
     }
-};
 
-/* AUTH MODULE */
-App.Auth = {
-    login() {
-        const e = document.getElementById('login-email').value;
-        const s = document.getElementById('login-senha').value;
-        if (!e || !s) return alert("Preencha as credenciais.");
-        App.UI.toggleLoading(true);
-        App.auth.signInWithEmailAndPassword(e, s).catch(err => {
-            App.UI.toggleLoading(false);
-            alert("Erro: " + err.message);
-        });
-    },
-    cadastrar() {
-        const e = document.getElementById('login-email').value;
-        const s = document.getElementById('login-senha').value;
-        if (!e || s.length < 6) return alert("Dados inválidos. Senha min 6 chars.");
-        App.UI.toggleLoading(true);
-        App.auth.createUserWithEmailAndPassword(e, s).then(cred => {
-            App.fs.collection("usuarios").doc(cred.user.uid).set({ role: "operador", email: e });
-        }).catch(err => {
-            App.UI.toggleLoading(false);
-            alert(err.message);
-        });
-    },
-    logout() {
-        App.Data.subs.forEach(unsub => unsub());
-        App.auth.signOut();
+    if (navDashboard) {
+        navDashboard.classList.toggle('hidden', !exibirDashboard);
     }
-};
+}
 
-/* SYNC MODULE */
-App.Sync = {
-    async carregarTudo(uid) {
-        try {
-            const userDoc = await App.fs.collection("usuarios").doc(uid).get();
-            App.Data.db.perfil = userDoc.data() || {};
-            
-            // Unsubs antigos
-            App.Data.subs.forEach(s => s());
-            
-            // Postos Realtime
-            const uPostos = App.fs.collection("postos").where("uid", "==", uid).onSnapshot(snap => {
-                App.Data.db.postos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                App.Postos.render();
-                App.Utils.save();
-            });
-            
-            // Minhas Rondas Realtime
-            const uRondas = App.fs.collection("rondas").where("uid", "==", uid).orderBy("timestamp", "desc").limit(20).onSnapshot(snap => {
-                App.Data.db.rondas = snap.docs.map(d => d.data());
-                App.Rondas.render();
-                App.Utils.save();
-            });
-
-            App.Data.subs = [uPostos, uRondas];
-            
-            if (App.Data.db.perfil.role === "admin" || App.Data.db.perfil.role === "gerencia") {
-                this.initDashboard();
-            }
-
-            App.UI.showView('home');
-            App.Perfil.render();
-            App.UI.toggleLoading(false);
-        } catch (e) {
-            console.error(e);
-            App.UI.toggleLoading(false);
-        }
-    },
-    initDashboard() {
-        document.getElementById('card-gerencial').classList.remove('hidden');
-        document.getElementById('nav-dashboard').classList.remove('hidden');
-        
-        const dSub = App.fs.collection("rondas").orderBy("timestamp", "desc").limit(50).onSnapshot(snap => {
-            const data = snap.docs.map(d => d.data());
-            App.Dashboard.processar(data);
-        });
-        App.Data.subs.push(dSub);
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        carregarDadosSincronizados(user.uid);
+    } else {
+        document.getElementById('view-login').classList.remove('hidden');
+        document.getElementById('app-content').classList.add('hidden');
     }
-};
+});
 
-/* UI MODULE */
-App.UI = {
-    showView(v) {
-        document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-        document.getElementById('view-' + v).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        if (document.getElementById('nav-' + v)) document.getElementById('nav-' + v).classList.add('active');
-        
-        if (v === 'rondas') App.Rondas.initForm();
-        if (v === 'postos') App.Postos.render();
-    },
-    toggleLoading(show) {
-        document.getElementById('loading-overlay').classList.toggle('hidden', !show);
-    },
-    toggleCheck(el) { el.classList.toggle('ok'); }
-};
+function login() {
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+    if(!e || !s) return alert("Preencha os campos!");
+    auth.signInWithEmailAndPassword(e, s).catch(err => alert("Erro: " + err.message));
+}
 
-/* RONDAS MODULE */
-App.Rondas = {
-    initForm() {
-        document.getElementById('r-placa').value = App.Data.db.perfil.placa || "";
-        const sel = document.getElementById('r-posto');
-        sel.innerHTML = '<option value="">Selecione...</option>' + 
-            App.Data.db.postos.map(p => `<option value="${p.nome}">${p.nome}</option>`).join('');
-        this.render();
-    },
-    toggleFiscalizacao() {
-        const show = document.getElementById('r-motivo').value === "Fiscalização";
-        document.getElementById('sec-fiscalizacao').style.display = show ? 'block' : 'none';
-    },
-    async salvar() {
-        const posto = document.getElementById('r-posto').value;
-        if (!posto) return alert("Selecione o posto!");
-        
-        App.UI.toggleLoading(true);
-        try {
-            let imgUrl = "";
-            if (App.Data.tempFoto) {
-                const ref = App.storage.ref(`rondas/${Date.now()}.jpg`);
-                await ref.putString(App.Data.tempFoto, 'data_url');
-                imgUrl = await ref.getDownloadURL();
-            }
+function cadastrar() {
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+    auth.createUserWithEmailAndPassword(e, s).then(() => alert("Conta criada!")).catch(err => alert(err.message));
+}
 
-            const check = {};
-            document.querySelectorAll('#checklist .check-item').forEach(i => {
-                check[i.innerText] = i.classList.contains('ok') ? 'OK' : 'PENDENTE';
-            });
+function logout() { auth.signOut(); }
 
-            const doc = {
-                uid: App.Data.uid,
-                opNome: App.Data.db.perfil.nome || "Anônimo",
-                posto: posto,
-                km: document.getElementById('r-km').value,
-                motivo: document.getElementById('r-motivo').value,
-                colaborador: document.getElementById('r-func').value,
-                obs: document.getElementById('r-obs').value,
-                checklist: check,
-                foto: imgUrl,
-                data: new Date().toLocaleDateString('pt-BR'),
-                hora: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
+function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
 
-            await App.fs.collection("rondas").add(doc);
-            this.limpar();
-            alert("Ronda enviada!");
-        } catch (e) {
-            alert("Erro: " + e.message);
-        }
-        App.UI.toggleLoading(false);
-    },
-    limpar() {
-        document.getElementById('r-km').value = "";
-        document.getElementById('r-obs').value = "";
-        document.getElementById('r-func').value = "";
-        document.getElementById('r-foto').value = "";
-        App.Data.tempFoto = "";
-    },
-    render() {
-        const h = document.getElementById('historico-rondas');
-        h.innerHTML = App.Data.db.rondas.map(r => `
-            <div class="ronda-entry">
-                <div style="display:flex; justify-content:space-between;">
-                    <b>${r.hora} - ${r.posto}</b>
-                    <button class="btn-small" style="background:var(--success)" onclick="App.Utils.gerarPDF(${JSON.stringify(r).replace(/"/g, '&quot;')})">PDF</button>
+async function carregarDadosSincronizados(uid) {
+    const docP = await fs.collection("usuarios").doc(uid).get();
+    if (docP.exists) db.perfil = docP.data();
+
+    const snapPostos = await fs.collection("postos").where("uid", "==", uid).get();
+    db.postos = snapPostos.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const snapRondas = await fs.collection("rondas").where("uid", "==", uid).orderBy("timestamp", "desc").limit(30).get();
+    db.rondas = snapRondas.docs.map(d => d.data());
+
+    saveLocal();
+    atualizarAcessoGerencialUI();
+    showView('home');
+}
+
+function showView(v) {
+    if (v === 'dashboard' && !isGerencia()) {
+        alert("Acesso negado: módulo exclusivo para admin e gerência.");
+        v = 'home';
+    }
+
+    document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+    document.getElementById('view-' + v).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+    const navAtual = document.getElementById('nav-' + v);
+    if (navAtual) navAtual.classList.add('active');
+
+    if (v === 'rondas') {
+        document.getElementById('r-placa').value = db.perfil.placa || "N/A";
+        atualizarSelectPostos();
+        renderRondas();
+    }
+    if (v === 'perfil') preencherCamposPerfil();
+    if (v === 'postos') renderPostos();
+    if (v === 'dashboard') carregarDashboard();
+}
+
+async function salvarRonda() {
+    const posto = document.getElementById('r-posto').value;
+    if(!posto) return alert("Selecione um posto!");
+
+    const checklist = {};
+    document.querySelectorAll('#checklist .check-item').forEach(i => {
+        checklist[i.innerText] = i.classList.contains('ok') ? 'OK' : 'PENDENTE';
+    });
+
+    const novaRonda = {
+        id: Date.now(),
+        uid: auth.currentUser.uid,
+        posto: posto,
+        motivo: document.getElementById('r-motivo').value,
+        km: document.getElementById('r-km').value || '0',
+        data: new Date().toLocaleDateString('pt-BR'),
+        hora: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
+        colaborador: document.getElementById('r-func').value || "N/A",
+        obs: document.getElementById('r-obs').value || "Sem alterações",
+        checklist: checklist,
+        foto: fotoBase64,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await fs.collection("rondas").add(novaRonda);
+        db.rondas.unshift(novaRonda);
+        saveLocal();
+        renderRondas();
+        gerarCardIndividual(novaRonda);
+        limparFormRonda();
+        alert("✅ Ronda registrada e Card gerado!");
+    } catch(e) {
+        alert("Erro ao sincronizar. Salvo localmente.");
+    }
+}
+
+function renderRondas() {
+    const container = document.getElementById('historico-rondas');
+    container.innerHTML = db.rondas.map((r) => `
+        <div class="ronda-entry">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong>${r.hora}</strong> - ${r.posto}<br>
+                    <small>${r.motivo} | KM: ${r.km}</small>
                 </div>
-                <small>${r.motivo} | VTR: ${App.Data.db.perfil.placa || '---'}</small>
+                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
             </div>
-        `).join('');
-    },
-    gerenciarIntervalo() {
-        const btn = document.getElementById('btn-intervalo');
-        if (!App.Data.db.intervalo) {
-            App.Data.db.intervalo = new Date().toLocaleTimeString();
-            btn.innerText = "☕ EM INTERVALO (" + App.Data.db.intervalo + ")";
-            btn.classList.replace('btn-info', 'btn-danger');
-        } else {
-            alert("Intervalo finalizado. Início: " + App.Data.db.intervalo);
-            App.Data.db.intervalo = null;
-            btn.innerText = "☕ INICIAR INTERVALO";
-            btn.classList.replace('btn-danger', 'btn-info');
-        }
-        App.Utils.save();
-    },
-    gerarRelatorioPlantao() {
-        if (App.Data.db.rondas.length === 0) return alert("Sem rondas hoje.");
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.setFontSize(16);
-        doc.text("RELATÓRIO DE PLANTÃO - " + App.Data.db.perfil.nome, 10, 20);
-        doc.setFontSize(10);
-        let y = 30;
-        App.Data.db.rondas.forEach(r => {
-            if (y > 270) { doc.addPage(); y = 20; }
-            doc.text(`${r.data} ${r.hora} | ${r.posto} | KM: ${r.km} | ${r.motivo}`, 10, y);
-            y += 7;
-        });
-        doc.save("Plantao_Sentinela.pdf");
-    }
-};
+        </div>
+    `).join('');
+}
 
-/* POSTOS MODULE */
-App.Postos = {
-    async adicionar() {
-        const n = prompt("Nome do Posto:");
-        if (!n) return;
-        App.UI.toggleLoading(true);
-        await App.fs.collection("postos").add({
-            nome: n.toUpperCase(),
-            uid: App.Data.uid,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        App.UI.toggleLoading(false);
-    },
-    async zerarRondas() {
-        if (!confirm("Isso apagará suas rondas VISÍVEIS para iniciar um novo plantão. Confirma?")) return;
-        App.UI.toggleLoading(true);
-        const snap = await App.fs.collection("rondas").where("uid", "==", App.Data.uid).get();
-        const batch = App.fs.batch();
-        snap.forEach(d => batch.delete(d.ref));
+function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
+
+function gerarCardIndividual(r) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
+    let y = 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
+    y += 7;
+    if (r.foto) { try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; } }
+    doc.setFontSize(11);
+    doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
+    y += 7;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
+    y += 5;
+    doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
+    y += 5;
+    doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("STATUS OPERACIONAL:", 5, y);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    Object.entries(r.checklist || {}).forEach(([item, status]) => {
+        y += 4;
+        doc.text(`• ${item}: ${status}`, 8, y);
+    });
+    y += 8;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("OBSERVAÇÕES:", 5, y);
+    doc.setFont("helvetica", "normal");
+    const obs = doc.splitTextToSize(r.obs, 70);
+    doc.text(obs, 5, y + 5);
+    y += (obs.length * 5) + 15;
+    doc.setFont("helvetica", "bold");
+    doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
+    doc.save(`Card_${r.posto}_${r.hora.replace(':','-')}.pdf`);
+}
+
+// --- FUNÇÕES POSTOS (CORRIGIDAS) ---
+async function adicionarPosto() {
+    if (!isAdmin()) return alert("Acesso negado: apenas administradores podem gerenciar postos.");
+    const nome = prompt("Nome do Posto:");
+    if(!nome) return;
+    const endereco = prompt("Endereço:");
+    const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
+    const docRef = await fs.collection("postos").add(novoPosto);
+    db.postos.push({ id: docRef.id, ...novoPosto });
+    saveLocal();
+    renderPostos();
+}
+
+function renderPostos() {
+    const busca = document.getElementById('busca-posto').value.toUpperCase();
+    const container = document.getElementById('lista-postos');
+    const btnNovoPosto = document.querySelector('button[onclick="adicionarPosto()"]');
+    
+    if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
+
+    const filtrados = db.postos.filter(p => p.nome.includes(busca));
+    container.innerHTML = filtrados.map((p, i) => `
+        <div class="posto-item">
+            <div style="flex:1;">
+                <b>${p.nome}</b><br><small>${p.endereco}</small>
+            </div>
+            <div style="display:flex;">
+                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
+                ${isAdmin() ? `
+                    <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
+                    <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
+                ` : ""}
+            </div>
+        </div>
+    `).join('');
+}
+
+async function editarPosto(id, index) {
+    if (!isAdmin()) return alert("Acesso negado.");
+    const posto = db.postos[index];
+    const novoNome = prompt("Editar nome do Posto:", posto.nome);
+    const novoEndereco = prompt("Editar endereço:", posto.endereco);
+    if (novoNome) {
+        const dadosAtualizados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
+        if(id) await fs.collection("postos").doc(id).update(dadosAtualizados);
+        db.postos[index] = { ...posto, ...dadosAtualizados };
+        saveLocal();
+        renderPostos();
+    }
+}
+
+async function excluirPosto(id, index) {
+    if (!isAdmin()) return alert("Acesso negado.");
+    if(!confirm("Excluir posto?")) return;
+    if(id) await fs.collection("postos").doc(id).delete();
+    db.postos.splice(index, 1);
+    saveLocal();
+    renderPostos();
+}
+
+// --- RESET DE PLANTÃO (CORRIGIDO) ---
+async function zerarRondasPlantao() {
+    if (!auth.currentUser) return alert("Usuário não autenticado.");
+    const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá apagar todas as rondas registradas do usuário logado para iniciar um novo plantão.\n\nDeseja continuar?");
+    if (!confirmar) return;
+    try {
+        await excluirRondasFirebaseUsuario(auth.currentUser.uid);
+        limparDadosLocaisRondas();
+        renderRondas();
+        alert("✅ Rondas zeradas com sucesso! Novo plantão iniciado.");
+    } catch (e) { alert("Erro ao zerar rondas: " + e.message); }
+}
+
+async function excluirRondasFirebaseUsuario(uid) {
+    while (true) {
+        const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
+        if (snap.empty) break;
+        const batch = fs.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
-        App.UI.toggleLoading(false);
-    },
-    render() {
-        const b = document.getElementById('busca-posto').value.toUpperCase();
-        const l = document.getElementById('lista-postos');
-        const p = App.Data.db.postos.filter(x => x.nome.includes(b));
-        l.innerHTML = p.map(x => `
-            <div class="posto-item">
-                <b>${x.nome}</b>
-                <button onclick="App.Postos.excluir('${x.id}')" class="btn-small" style="background:var(--danger)">🗑️</button>
-            </div>
-        `).join('');
-    },
-    async excluir(id) {
-        if (confirm("Excluir posto?")) await App.fs.collection("postos").doc(id).delete();
+        if (snap.size < 450) break;
     }
-};
+}
 
-/* PERFIL MODULE */
-App.Perfil = {
-    render() {
-        const p = App.Data.db.perfil;
-        document.getElementById('p-nome').value = p.nome || "";
-        document.getElementById('p-matricula').value = p.matricula || "";
-        document.getElementById('p-cargo').value = p.cargo || "";
-        document.getElementById('p-placa').value = p.placa || "";
-        document.getElementById('p-empresa').value = p.empresa || "";
-        document.getElementById('p-cnpj').value = p.cnpj || "";
-    },
-    async salvar() {
-        App.UI.toggleLoading(true);
-        const p = {
-            nome: document.getElementById('p-nome').value,
-            matricula: document.getElementById('p-matricula').value,
-            cargo: document.getElementById('p-cargo').value,
-            placa: document.getElementById('p-placa').value.toUpperCase(),
-            empresa: document.getElementById('p-empresa').value,
-            cnpj: document.getElementById('p-cnpj').value
-        };
-        await App.fs.collection("usuarios").doc(App.Data.uid).update(p);
-        App.Data.db.perfil = { ...App.Data.db.perfil, ...p };
-        App.Utils.save();
-        App.UI.toggleLoading(false);
-        alert("Perfil atualizado!");
-    }
-};
+function limparDadosLocaisRondas() {
+    db.rondas = [];
+    saveLocal();
+}
 
-/* DASHBOARD MODULE */
-App.Dashboard = {
-    processar(data) {
-        document.getElementById('dash-total-rondas').innerText = data.length;
-        document.getElementById('dash-total-postos').innerText = new Set(data.map(r => r.posto)).size;
-        document.getElementById('dash-operadores-ativos').innerText = new Set(data.map(r => r.uid)).size;
-        document.getElementById('dash-atualizacao').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        
-        const rank = {};
-        data.forEach(r => rank[r.opNome] = (rank[r.opNome] || 0) + 1);
-        const sorted = Object.entries(rank).sort((a,b) => b[1]-a[1]).slice(0, 5);
-        
-        document.getElementById('dash-ranking').innerHTML = sorted.map(([n, q]) => `
-            <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #334155;">
-                <span>${n}</span> <b>${q} rondas</b>
-            </div>
-        `).join('');
+// --- PERFIL (CORRIGIDO) ---
+async function salvarPerfil() {
+    const p = {
+        nome: document.getElementById('p-nome').value,
+        matricula: document.getElementById('p-matrícula').value,
+        cargo: document.getElementById('p-cargo').value,
+        placa: document.getElementById('p-placa').value.toUpperCase(),
+        empresa: document.getElementById('p-empresa').value,
+        cnpj: document.getElementById('p-cnpj').value
+    };
+    db.perfil = { ...db.perfil, ...p };
+    saveLocal();
+    await fs.collection("usuarios").doc(auth.currentUser.uid).update(p);
+    atualizarAcessoGerencialUI();
+    alert("✅ Perfil salvo!");
+}
 
-        document.getElementById('dash-ultimas-rondas').innerHTML = data.slice(0, 10).map(r => `
-            <div class="ronda-entry" style="border-left-color: var(--success)">
-                <b>${r.opNome}</b> -> ${r.posto} <br>
-                <small>${r.hora} | ${r.motivo}</small>
-            </div>
-        `).join('');
-    }
-};
+function preencherCamposPerfil() {
+    const p = db.perfil;
+    document.getElementById('p-nome').value = p.nome || "";
+    document.getElementById('p-matrícula').value = p.matricula || "";
+    document.getElementById('p-cargo').value = p.cargo || "";
+    document.getElementById('p-placa').value = p.placa || "";
+    document.getElementById('p-empresa').value = p.empresa || "";
+    document.getElementById('p-cnpj').value = p.cnpj || "";
+}
 
-/* UTILS MODULE */
-App.Utils = {
-    save() { localStorage.setItem('sentinela_ops_db', JSON.stringify(App.Data.db)); },
-    previewImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const scale = 600 / img.width;
-                    canvas.width = 600; canvas.height = img.height * scale;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    App.Data.tempFoto = canvas.toDataURL('image/jpeg', 0.7);
-                };
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    },
-    gerarPDF(r) {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [80, 160] });
-        doc.setFontSize(10).text("SENTINELA OPS - COMPROVANTE", 40, 10, {align:'center'});
-        doc.setFontSize(8);
-        doc.text(`Posto: ${r.posto}`, 5, 20);
-        doc.text(`Data: ${r.data} ${r.hora}`, 5, 25);
-        doc.text(`Operador: ${r.opNome}`, 5, 30);
-        doc.text(`KM: ${r.km} | Motivo: ${r.motivo}`, 5, 35);
-        doc.text("------------------------------------------", 5, 40);
-        let y = 45;
-        Object.entries(r.checklist).forEach(([k, v]) => {
-            doc.text(`${k}: ${v}`, 5, y); y += 5;
+// --- NOVO MÓDULO ADITIVO | DASHBOARD GERENCIAL ---
+async function carregarDashboard() {
+    if (!isGerencia()) return;
+
+    const status = document.getElementById('dashboard-status');
+    const statsContainer = document.getElementById('dashboard-stats');
+    const rankingContainer = document.getElementById('dashboard-ranking');
+    const ultimasContainer = document.getElementById('dashboard-ultimas-rondas');
+
+    status.innerHTML = "Carregando visão global da operação...";
+    rankingContainer.innerHTML = "";
+    ultimasContainer.innerHTML = "";
+
+    try {
+        const snap = await fs.collection("rondas")
+            .orderBy("timestamp", "desc")
+            .limit(120)
+            .get();
+
+        const rondasGlobais = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const uids = [...new Set(rondasGlobais.map(r => r.uid).filter(Boolean))];
+        const usuariosMap = {};
+
+        await Promise.all(
+            uids.map(async (uid) => {
+                try {
+                    const docUser = await fs.collection("usuarios").doc(uid).get();
+                    usuariosMap[uid] = docUser.exists ? docUser.data() : {};
+                } catch (e) {
+                    usuariosMap[uid] = {};
+                }
+            })
+        );
+
+        const rankingMap = {};
+        rondasGlobais.forEach(r => {
+            const uid = r.uid || "SEM_UID";
+            if (!rankingMap[uid]) rankingMap[uid] = 0;
+            rankingMap[uid]++;
         });
-        if (r.foto) {
-            doc.addPage();
-            doc.text("IMAGEM DE COMPROVAÇÃO", 40, 10, {align:'center'});
-            doc.addImage(r.foto, 'JPEG', 5, 20, 70, 50);
-        }
-        doc.save(`Ronda_${r.posto}.pdf`);
-    }
-};
 
-/* INICIAR APP */
-App.Init();
+        const ranking = Object.keys(rankingMap)
+            .map(uid => ({
+                uid: uid,
+                total: rankingMap[uid],
+                nome: uid === "SEM_UID"
+                    ? "Operador não identificado"
+                    : ((usuariosMap[uid] && usuariosMap[uid].nome) ? usuariosMap[uid].nome : `Operador ${uid.substring(0, 6).toUpperCase()}`),
+                cargo: (usuariosMap[uid] && usuariosMap[uid].cargo) ? usuariosMap[uid].cargo : "Operacional"
+            }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 10);
+
+        const postosVisitados = new Set(
+            rondasGlobais
+                .map(r => (r.posto || "").trim())
+                .filter(Boolean)
+        ).size;
+
+        const ultimasRondas = rondasGlobais.slice(0, 12).map(r => ({
+            posto: r.posto || "Posto não informado",
+            motivo: r.motivo || "N/A",
+            km: r.km || "0",
+            operador: (usuariosMap[r.uid] && usuariosMap[r.uid].nome)
+                ? usuariosMap[r.uid].nome
+                : (r.uid ? `Operador ${r.uid.substring(0, 6).toUpperCase()}` : "Operador não identificado"),
+            cargo: (usuariosMap[r.uid] && usuariosMap[r.uid].cargo) ? usuariosMap[r.uid].cargo : "",
+            dataHora: formatarDataHoraDashboard(r)
+        }));
+
+        db.dashboard = {
+            stats: {
+                totalRondas: rondasGlobais.length,
+                postosVisitados: postosVisitados,
+                operadoresAtivos: uids.length,
+                ultimaAtualizacao: new Date().toLocaleString('pt-BR')
+            },
+            ranking: ranking,
+            ultimasRondas: ultimasRondas
+        };
+
+        saveLocal();
+        renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, db.dashboard, false);
+    } catch (e) {
+        if (db.dashboard && db.dashboard.stats) {
+            renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, db.dashboard, true);
+        } else {
+            const dashboardVazio = {
+                stats: {
+                    totalRondas: 0,
+                    postosVisitados: 0,
+                    operadoresAtivos: 0,
+                    ultimaAtualizacao: "Sem dados"
+                },
+                ranking: [],
+                ultimasRondas: []
+            };
+            renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, dashboardVazio, true);
+        }
+    }
+}
+
+function formatarDataHoraDashboard(ronda) {
+    if (ronda.timestamp && typeof ronda.timestamp.toDate === "function") {
+        return ronda.timestamp.toDate().toLocaleString('pt-BR');
+    }
+    if (ronda.data || ronda.hora) {
+        return `${ronda.data || ""} ${ronda.hora || ""}`.trim();
+    }
+    return "Sem horário";
+}
+
+function renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, dados, usandoCache = false) {
+    statsContainer.innerHTML = `
+        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Total de Rondas</div>
+            <div style="font-size:1.4rem; font-weight:700; color:var(--accent); margin-top:4px;">${dados.stats.totalRondas}</div>
+        </div>
+        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Postos Visitados</div>
+            <div style="font-size:1.4rem; font-weight:700; color:#60a5fa; margin-top:4px;">${dados.stats.postosVisitados}</div>
+        </div>
+        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Operadores Ativos</div>
+            <div style="font-size:1.4rem; font-weight:700; color:#22c55e; margin-top:4px;">${dados.stats.operadoresAtivos}</div>
+        </div>
+        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
+            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Última Atualização</div>
+            <div style="font-size:0.88rem; font-weight:700; color:#e0e7ff; margin-top:7px;">${dados.stats.ultimaAtualizacao}</div>
+        </div>
+    `;
+
+    status.innerHTML = usandoCache
+        ? "Exibindo último dashboard disponível em cache local."
+        : "Visão global carregada com sucesso para admin/gerência.";
+
+    if (!dados.ranking.length) {
+        rankingContainer.innerHTML = `<div class="ronda-entry">Nenhum dado global disponível para ranking.</div>`;
+    } else {
+        rankingContainer.innerHTML = dados.ranking.map((item, index) => `
+            <div class="ronda-entry">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <div>
+                        <strong>#${index + 1} - ${item.nome}</strong><br>
+                        <small>${item.cargo}</small>
+                    </div>
+                    <div style="font-weight:700; color:var(--accent); white-space:nowrap;">
+                        ${item.total} ronda${item.total > 1 ? 's' : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    if (!dados.ultimasRondas.length) {
+        ultimasContainer.innerHTML = `<div class="ronda-entry">Nenhuma ronda global encontrada.</div>`;
+    } else {
+        ultimasContainer.innerHTML = dados.ultimasRondas.map((r) => `
+            <div class="ronda-entry">
+                <strong>${r.posto}</strong><br>
+                <small>${r.operador}${r.cargo ? " | " + r.cargo : ""}</small><br>
+                <small>${r.motivo} | KM: ${r.km}</small><br>
+                <small>${r.dataHora}</small>
+            </div>
+        `).join('');
+    }
+}
+
+// --- AUXILIARES ---
+function atualizarSelectPostos() {
+    const sel = document.getElementById('r-posto');
+    sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
+}
+
+function toggleCheck(el) { el.classList.toggle('ok'); }
+function toggleFiscalizacao() {
+    const m = document.getElementById('r-motivo').value;
+    document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const maxWidth = 800;
+                const scale = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            };
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function limparFormRonda() {
+    document.getElementById('r-km').value = "";
+    document.getElementById('r-obs').value = "";
+    document.getElementById('r-func').value = "";
+    fotoBase64 = "";
+    document.getElementById('r-foto').value = "";
+}
+
+function gerarRelatorioPlantao() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const p = db.perfil;
+    let y = 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
+    y += 15;
+    doc.setFontSize(10);
+    doc.text("DADOS DO OPERADOR", 10, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
+    doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
+    y += 5;
+    doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
+    doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
+    y += 10;
+    doc.setLineWidth(0.5); doc.line(10, y, 200, y); y += 10;
+    doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
+    db.rondas.forEach((r, index) => {
+        if(y > 260) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+        doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
+        y += 5; doc.setFont("helvetica", "normal");
+        doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
+        y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
+        y += 5; const obs = doc.splitTextToSize(`Obs: ${r.obs}`, 180); doc.text(obs, 15, y);
+        y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
+    });
+    doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+}
 </script>
 </body>
 </html>
