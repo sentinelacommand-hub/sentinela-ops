@@ -8,7 +8,6 @@ async function salvarRonda() {
     });
 
     const novaRonda = {
-        id: Date.now(),
         uid: auth.currentUser.uid,
         posto: posto,
         motivo: document.getElementById('r-motivo').value,
@@ -23,21 +22,22 @@ async function salvarRonda() {
     };
 
     try {
-        await fs.collection("rondas").add(novaRonda);
-        db.rondas.unshift(novaRonda);
+        const docRef = await fs.collection("rondas").add(novaRonda);
+        novaRonda.id = docRef.id;
+        window.db.rondas.unshift(novaRonda);
         saveLocal();
         renderRondas();
         gerarCardIndividual(novaRonda);
         limparFormRonda();
-        alert("✅ Ronda registrada e Card gerado!");
+        alert("✅ Ronda registrada!");
     } catch(e) {
-        alert("Erro ao sincronizar. Salvo localmente.");
+        alert("Erro ao salvar.");
     }
 }
 
 function renderRondas() {
     const container = document.getElementById('historico-rondas');
-    container.innerHTML = db.rondas.map((r) => `
+    container.innerHTML = window.db.rondas.map((r) => `
         <div class="ronda-entry">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
@@ -50,66 +50,42 @@ function renderRondas() {
     `).join('');
 }
 
-function reimprimirCard(ronda) {
-    gerarCardIndividual(ronda);
-}
-
 function gerarCardIndividual(r) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
     let y = 10;
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("helvetica", "bold").setFontSize(10);
     doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
-
     y += 7;
-    if (r.foto) {
+    if (r.foto && r.foto.startsWith('data:image')) {
         try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; }
     }
-
-    doc.setFontSize(11);
-    doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
+    doc.setFontSize(11).text(r.posto.toUpperCase(), 40, y, { align: "center" });
     y += 7;
-    
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8).setFont("helvetica", "normal");
     doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
     y += 5;
-    doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
+    doc.text(`VTR: ${window.db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
     y += 5;
     doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
-    
     y += 8;
-    doc.setFont("helvetica", "bold");
-    doc.text("STATUS OPERACIONAL:", 5, y);
-    
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "bold").text("STATUS OPERACIONAL:", 5, y);
+    doc.setFontSize(7).setFont("helvetica", "normal");
     Object.entries(r.checklist || {}).forEach(([item, status]) => {
-        y += 4;
-        doc.text(`• ${item}: ${status}`, 8, y);
+        y += 4; doc.text(`• ${item}: ${status}`, 8, y);
     });
-
     y += 8;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text("OBSERVAÇÕES:", 5, y);
-    
-    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8).setFont("helvetica", "bold").text("OBSERVAÇÕES:", 5, y);
     const obs = doc.splitTextToSize(r.obs, 70);
-    doc.text(obs, 5, y + 5);
-
+    doc.setFont("helvetica", "normal").text(obs, 5, y + 5);
     y += (obs.length * 5) + 15;
-    doc.setFont("helvetica", "bold");
-    doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
+    doc.setFont("helvetica", "bold").text(`${(window.db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
-
+    doc.text((window.db.perfil.nome || "N/A").toUpperCase(), 5, y);
     doc.save(`Card_${r.posto}_${r.hora.replace(':','-')}.pdf`);
 }
 
+function reimprimirCard(r) { gerarCardIndividual(r); }
 function limparFormRonda() {
     document.getElementById('r-km').value = "";
     document.getElementById('r-obs').value = "";
