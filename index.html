@@ -4,26 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SENTINELA OPS - CLOUD V2</title>
-
-  aqui
-
-<script>
-window.onerror = function(msg, url, line, col, error) {
-    alert(
-        "ERRO:\n" +
-        msg +
-        "\nLINHA: " + line +
-        "\nCOLUNA: " + col
-    );
-
-    console.error("ERRO DETALHADO:", {
-        mensagem: msg,
-        linha: line,
-        coluna: col,
-        erro: error
-    });
-};
-</script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -90,50 +70,6 @@ window.onerror = function(msg, url, line, col, error) {
         <div class="card" onclick="showView('postos')" style="cursor:pointer; border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
         <div class="card" onclick="gerarRelatorioPlantao()" style="cursor:pointer; border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
         <div class="card" onclick="showView('perfil')" style="cursor:pointer; border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
-
-        <!-- NOVO CARD HOME | EXCLUSIVO GERÊNCIA -->
-        <div id="card-dashboard-home" class="card hidden" onclick="showView('dashboard')" style="cursor:pointer; border-left: 5px solid #f59e0b;">📊 <b>DASHBOARD GERENCIAL</b></div>
-    </div>
-
-    <!-- NOVA VIEW | DASHBOARD GERENCIAL -->
-    <div id="view-dashboard" class="container hidden">
-        <div class="card">
-            <h3>DASHBOARD GERENCIAL</h3>
-            <div id="dashboard-status" style="font-size:0.82rem; color:#94a3b8; margin-bottom:14px;">
-                Carregando visão global da operação...
-            </div>
-
-            <div id="dashboard-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Total de Rondas</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:var(--accent); margin-top:4px;">--</div>
-                </div>
-                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Postos Visitados</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#60a5fa; margin-top:4px;">--</div>
-                </div>
-                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Operadores Ativos</div>
-                    <div style="font-size:1.4rem; font-weight:700; color:#22c55e; margin-top:4px;">--</div>
-                </div>
-                <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-                    <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Última Atualização</div>
-                    <div style="font-size:0.88rem; font-weight:700; color:#e0e7ff; margin-top:7px;">--</div>
-                </div>
-            </div>
-
-            <button class="btn btn-info" onclick="carregarDashboard()">🔄 ATUALIZAR DASHBOARD</button>
-        </div>
-
-        <div class="card">
-            <h3>RANKING OPERACIONAL</h3>
-            <div id="dashboard-ranking"></div>
-        </div>
-
-        <div class="card">
-            <h3>ÚLTIMAS RONDAS GLOBAIS</h3>
-            <div id="dashboard-ultimas-rondas"></div>
-        </div>
     </div>
 
     <div id="view-rondas" class="container hidden">
@@ -209,9 +145,6 @@ window.onerror = function(msg, url, line, col, error) {
         <div class="nav-item" id="nav-rondas" onclick="showView('rondas')">📍 RONDAS</div>
         <div class="nav-item" id="nav-postos" onclick="showView('postos')">📋 POSTOS</div>
         <div class="nav-item" id="nav-perfil" onclick="showView('perfil')">👤 PERFIL</div>
-
-        <!-- BOTÃO OPCIONAL NO MENU INFERIOR | EXCLUSIVO GERÊNCIA -->
-        <div class="nav-item hidden" id="nav-dashboard" onclick="showView('dashboard')">📊 DASH</div>
     </nav>
 </div>
 
@@ -231,33 +164,11 @@ const auth = firebase.auth();
 const fs = firebase.firestore();
 
 let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
-if (!db.dashboard) db.dashboard = { stats: null, ranking: [], ultimasRondas: [] };
-
 let fotoBase64 = "";
 
 // --- SISTEMA DE PERMISSÃO ---
 function isAdmin() {
     return db.perfil && db.perfil.role === "admin";
-}
-
-// NOVO CONTROLE ADITIVO | GERÊNCIA
-function isGerencia() {
-    return db.perfil && (db.perfil.role === "admin" || db.perfil.role === "gerencia");
-}
-
-// NOVA INTEGRAÇÃO VISUAL | CARD HOME + MENU DASHBOARD
-function atualizarAcessoGerencialUI() {
-    const exibirDashboard = isGerencia();
-    const cardDashboardHome = document.getElementById('card-dashboard-home');
-    const navDashboard = document.getElementById('nav-dashboard');
-
-    if (cardDashboardHome) {
-        cardDashboardHome.classList.toggle('hidden', !exibirDashboard);
-    }
-
-    if (navDashboard) {
-        navDashboard.classList.toggle('hidden', !exibirDashboard);
-    }
 }
 
 auth.onAuthStateChanged(user => {
@@ -299,22 +210,14 @@ async function carregarDadosSincronizados(uid) {
     db.rondas = snapRondas.docs.map(d => d.data());
 
     saveLocal();
-    atualizarAcessoGerencialUI();
     showView('home');
 }
 
 function showView(v) {
-    if (v === 'dashboard' && !isGerencia()) {
-        alert("Acesso negado: módulo exclusivo para admin e gerência.");
-        v = 'home';
-    }
-
     document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
     document.getElementById('view-' + v).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-
-    const navAtual = document.getElementById('nav-' + v);
-    if (navAtual) navAtual.classList.add('active');
+    document.getElementById('nav-' + v).classList.add('active');
 
     if (v === 'rondas') {
         document.getElementById('r-placa').value = db.perfil.placa || "N/A";
@@ -323,7 +226,6 @@ function showView(v) {
     }
     if (v === 'perfil') preencherCamposPerfil();
     if (v === 'postos') renderPostos();
-    if (v === 'dashboard') carregarDashboard();
 }
 
 async function salvarRonda() {
@@ -526,7 +428,6 @@ async function salvarPerfil() {
     db.perfil = { ...db.perfil, ...p };
     saveLocal();
     await fs.collection("usuarios").doc(auth.currentUser.uid).update(p);
-    atualizarAcessoGerencialUI();
     alert("✅ Perfil salvo!");
 }
 
@@ -538,174 +439,6 @@ function preencherCamposPerfil() {
     document.getElementById('p-placa').value = p.placa || "";
     document.getElementById('p-empresa').value = p.empresa || "";
     document.getElementById('p-cnpj').value = p.cnpj || "";
-}
-
-// --- NOVO MÓDULO ADITIVO | DASHBOARD GERENCIAL ---
-async function carregarDashboard() {
-    if (!isGerencia()) return;
-
-    const status = document.getElementById('dashboard-status');
-    const statsContainer = document.getElementById('dashboard-stats');
-    const rankingContainer = document.getElementById('dashboard-ranking');
-    const ultimasContainer = document.getElementById('dashboard-ultimas-rondas');
-
-    status.innerHTML = "Carregando visão global da operação...";
-    rankingContainer.innerHTML = "";
-    ultimasContainer.innerHTML = "";
-
-    try {
-        const snap = await fs.collection("rondas")
-            .orderBy("timestamp", "desc")
-            .limit(120)
-            .get();
-
-        const rondasGlobais = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const uids = [...new Set(rondasGlobais.map(r => r.uid).filter(Boolean))];
-        const usuariosMap = {};
-
-        await Promise.all(
-            uids.map(async (uid) => {
-                try {
-                    const docUser = await fs.collection("usuarios").doc(uid).get();
-                    usuariosMap[uid] = docUser.exists ? docUser.data() : {};
-                } catch (e) {
-                    usuariosMap[uid] = {};
-                }
-            })
-        );
-
-        const rankingMap = {};
-        rondasGlobais.forEach(r => {
-            const uid = r.uid || "SEM_UID";
-            if (!rankingMap[uid]) rankingMap[uid] = 0;
-            rankingMap[uid]++;
-        });
-
-        const ranking = Object.keys(rankingMap)
-            .map(uid => ({
-                uid: uid,
-                total: rankingMap[uid],
-                nome: uid === "SEM_UID"
-                    ? "Operador não identificado"
-                    : ((usuariosMap[uid] && usuariosMap[uid].nome) ? usuariosMap[uid].nome : `Operador ${uid.substring(0, 6).toUpperCase()}`),
-                cargo: (usuariosMap[uid] && usuariosMap[uid].cargo) ? usuariosMap[uid].cargo : "Operacional"
-            }))
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 10);
-
-        const postosVisitados = new Set(
-            rondasGlobais
-                .map(r => (r.posto || "").trim())
-                .filter(Boolean)
-        ).size;
-
-        const ultimasRondas = rondasGlobais.slice(0, 12).map(r => ({
-            posto: r.posto || "Posto não informado",
-            motivo: r.motivo || "N/A",
-            km: r.km || "0",
-            operador: (usuariosMap[r.uid] && usuariosMap[r.uid].nome)
-                ? usuariosMap[r.uid].nome
-                : (r.uid ? `Operador ${r.uid.substring(0, 6).toUpperCase()}` : "Operador não identificado"),
-            cargo: (usuariosMap[r.uid] && usuariosMap[r.uid].cargo) ? usuariosMap[r.uid].cargo : "",
-            dataHora: formatarDataHoraDashboard(r)
-        }));
-
-        db.dashboard = {
-            stats: {
-                totalRondas: rondasGlobais.length,
-                postosVisitados: postosVisitados,
-                operadoresAtivos: uids.length,
-                ultimaAtualizacao: new Date().toLocaleString('pt-BR')
-            },
-            ranking: ranking,
-            ultimasRondas: ultimasRondas
-        };
-
-        saveLocal();
-        renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, db.dashboard, false);
-    } catch (e) {
-        if (db.dashboard && db.dashboard.stats) {
-            renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, db.dashboard, true);
-        } else {
-            const dashboardVazio = {
-                stats: {
-                    totalRondas: 0,
-                    postosVisitados: 0,
-                    operadoresAtivos: 0,
-                    ultimaAtualizacao: "Sem dados"
-                },
-                ranking: [],
-                ultimasRondas: []
-            };
-            renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, dashboardVazio, true);
-        }
-    }
-}
-
-function formatarDataHoraDashboard(ronda) {
-    if (ronda.timestamp && typeof ronda.timestamp.toDate === "function") {
-        return ronda.timestamp.toDate().toLocaleString('pt-BR');
-    }
-    if (ronda.data || ronda.hora) {
-        return `${ronda.data || ""} ${ronda.hora || ""}`.trim();
-    }
-    return "Sem horário";
-}
-
-function renderDashboard(statsContainer, rankingContainer, ultimasContainer, status, dados, usandoCache = false) {
-    statsContainer.innerHTML = `
-        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Total de Rondas</div>
-            <div style="font-size:1.4rem; font-weight:700; color:var(--accent); margin-top:4px;">${dados.stats.totalRondas}</div>
-        </div>
-        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Postos Visitados</div>
-            <div style="font-size:1.4rem; font-weight:700; color:#60a5fa; margin-top:4px;">${dados.stats.postosVisitados}</div>
-        </div>
-        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Operadores Ativos</div>
-            <div style="font-size:1.4rem; font-weight:700; color:#22c55e; margin-top:4px;">${dados.stats.operadoresAtivos}</div>
-        </div>
-        <div style="background:#1e2a44; border:1px solid #334155; border-radius:8px; padding:14px;">
-            <div style="font-size:0.74rem; color:#94a3b8; text-transform:uppercase;">Última Atualização</div>
-            <div style="font-size:0.88rem; font-weight:700; color:#e0e7ff; margin-top:7px;">${dados.stats.ultimaAtualizacao}</div>
-        </div>
-    `;
-
-    status.innerHTML = usandoCache
-        ? "Exibindo último dashboard disponível em cache local."
-        : "Visão global carregada com sucesso para admin/gerência.";
-
-    if (!dados.ranking.length) {
-        rankingContainer.innerHTML = `<div class="ronda-entry">Nenhum dado global disponível para ranking.</div>`;
-    } else {
-        rankingContainer.innerHTML = dados.ranking.map((item, index) => `
-            <div class="ronda-entry">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                    <div>
-                        <strong>#${index + 1} - ${item.nome}</strong><br>
-                        <small>${item.cargo}</small>
-                    </div>
-                    <div style="font-weight:700; color:var(--accent); white-space:nowrap;">
-                        ${item.total} ronda${item.total > 1 ? 's' : ''}
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    if (!dados.ultimasRondas.length) {
-        ultimasContainer.innerHTML = `<div class="ronda-entry">Nenhuma ronda global encontrada.</div>`;
-    } else {
-        ultimasContainer.innerHTML = dados.ultimasRondas.map((r) => `
-            <div class="ronda-entry">
-                <strong>${r.posto}</strong><br>
-                <small>${r.operador}${r.cargo ? " | " + r.cargo : ""}</small><br>
-                <small>${r.motivo} | KM: ${r.km}</small><br>
-                <small>${r.dataHora}</small>
-            </div>
-        `).join('');
-    }
 }
 
 // --- AUXILIARES ---
