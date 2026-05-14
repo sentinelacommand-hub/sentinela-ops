@@ -149,14 +149,14 @@
 </div>
 
 <script>
-// --- CONFIG FIREBASE ATUALIZADA ---
+// --- CONFIG FIREBASE ---
 const firebaseConfig = {
-  apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
-  authDomain: "sentinela-ops-profissional.firebaseapp.com",
-  projectId: "sentinela-ops-profissional",
-  storageBucket: "sentinela-ops-profissional.firebasestorage.app",
-  messagingSenderId: "458111218365",
-  appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
+    apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
+    authDomain: "sentinela-ops-profissional.firebaseapp.com",
+    projectId: "sentinela-ops-profissional",
+    storageBucket: "sentinela-ops-profissional.firebasestorage.app",
+    messagingSenderId: "458111218365",
+    appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -165,6 +165,11 @@ const fs = firebase.firestore();
 
 let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
 let fotoBase64 = "";
+
+// --- SISTEMA DE PERMISSÃO ---
+function isAdmin() {
+    return db.perfil && db.perfil.role === "admin";
+}
 
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -223,8 +228,6 @@ function showView(v) {
     if (v === 'postos') renderPostos();
 }
 
-// --- FUNÇÕES RONDAS ---
-
 async function salvarRonda() {
     const posto = document.getElementById('r-posto').value;
     if(!posto) return alert("Selecione um posto!");
@@ -277,28 +280,20 @@ function renderRondas() {
     `).join('');
 }
 
-function reimprimirCard(ronda) {
-    gerarCardIndividual(ronda);
-}
+function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
 
 function gerarCardIndividual(r) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
     let y = 10;
-
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
     doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
-
     y += 7;
-    if (r.foto) {
-        try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; }
-    }
-
+    if (r.foto) { try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; } }
     doc.setFontSize(11);
     doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
     y += 7;
-    
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
@@ -306,39 +301,34 @@ function gerarCardIndividual(r) {
     doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
     y += 5;
     doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
-    
     y += 8;
     doc.setFont("helvetica", "bold");
     doc.text("STATUS OPERACIONAL:", 5, y);
-    
     doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     Object.entries(r.checklist || {}).forEach(([item, status]) => {
         y += 4;
         doc.text(`• ${item}: ${status}`, 8, y);
     });
-
     y += 8;
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.text("OBSERVAÇÕES:", 5, y);
-    
     doc.setFont("helvetica", "normal");
     const obs = doc.splitTextToSize(r.obs, 70);
     doc.text(obs, 5, y + 5);
-
     y += (obs.length * 5) + 15;
     doc.setFont("helvetica", "bold");
     doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
     y += 5;
     doc.setFont("helvetica", "normal");
     doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
-
     doc.save(`Card_${r.posto}_${r.hora.replace(':','-')}.pdf`);
 }
 
-// --- FUNÇÕES POSTOS ---
+// --- FUNÇÕES POSTOS (CORRIGIDAS) ---
 async function adicionarPosto() {
+    if (!isAdmin()) return alert("Acesso negado: apenas administradores podem gerenciar postos.");
     const nome = prompt("Nome do Posto:");
     if(!nome) return;
     const endereco = prompt("Endereço:");
@@ -352,42 +342,43 @@ async function adicionarPosto() {
 function renderPostos() {
     const busca = document.getElementById('busca-posto').value.toUpperCase();
     const container = document.getElementById('lista-postos');
+    const btnNovoPosto = document.querySelector('button[onclick="adicionarPosto()"]');
+    
+    if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
+
     const filtrados = db.postos.filter(p => p.nome.includes(busca));
     container.innerHTML = filtrados.map((p, i) => `
         <div class="posto-item">
-            <div style="flex:1;" onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})">
+            <div style="flex:1;">
                 <b>${p.nome}</b><br><small>${p.endereco}</small>
             </div>
             <div style="display:flex;">
                 <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
-                <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
-                <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
+                ${isAdmin() ? `
+                    <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
+                    <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
+                ` : ""}
             </div>
         </div>
     `).join('');
 }
 
 async function editarPosto(id, index) {
+    if (!isAdmin()) return alert("Acesso negado.");
     const posto = db.postos[index];
     const novoNome = prompt("Editar nome do Posto:", posto.nome);
     const novoEndereco = prompt("Editar endereço:", posto.endereco);
-
     if (novoNome) {
-        const dadosAtualizados = {
-            nome: novoNome.toUpperCase(),
-            endereco: novoEndereco || "Sem endereço"
-        };
-        
+        const dadosAtualizados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
         if(id) await fs.collection("postos").doc(id).update(dadosAtualizados);
-        
         db.postos[index] = { ...posto, ...dadosAtualizados };
         saveLocal();
         renderPostos();
-        alert("Posto atualizado!");
     }
 }
 
 async function excluirPosto(id, index) {
+    if (!isAdmin()) return alert("Acesso negado.");
     if(!confirm("Excluir posto?")) return;
     if(id) await fs.collection("postos").doc(id).delete();
     db.postos.splice(index, 1);
@@ -395,76 +386,36 @@ async function excluirPosto(id, index) {
     renderPostos();
 }
 
-// --- NOVAS FUNÇÕES: RESET DE PLANTÃO / ZERAR RONDAS ---
+// --- RESET DE PLANTÃO (CORRIGIDO) ---
 async function zerarRondasPlantao() {
     if (!auth.currentUser) return alert("Usuário não autenticado.");
-
-    const confirmar = confirm(
-        "ATENÇÃO!\n\n" +
-        "Esta ação irá apagar todas as rondas registradas do usuário logado para iniciar um novo plantão.\n\n" +
-        "Deseja continuar?"
-    );
-
+    const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá apagar todas as rondas registradas do usuário logado para iniciar um novo plantão.\n\nDeseja continuar?");
     if (!confirmar) return;
-
     try {
         await excluirRondasFirebaseUsuario(auth.currentUser.uid);
         limparDadosLocaisRondas();
         renderRondas();
         alert("✅ Rondas zeradas com sucesso! Novo plantão iniciado.");
-    } catch (e) {
-        alert("Erro ao zerar rondas: " + e.message);
-    }
+    } catch (e) { alert("Erro ao zerar rondas: " + e.message); }
 }
 
 async function excluirRondasFirebaseUsuario(uid) {
     while (true) {
-        const snap = await fs.collection("rondas")
-            .where("uid", "==", uid)
-            .limit(450)
-            .get();
-
+        const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
         if (snap.empty) break;
-
         const batch = fs.batch();
         snap.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
-
         if (snap.size < 450) break;
     }
 }
 
 function limparDadosLocaisRondas() {
     db.rondas = [];
-
-    const dadosLocais = JSON.parse(localStorage.getItem('sentinela_ops_db')) || {};
-    const baseAtualizada = {
-        perfil: dadosLocais.perfil || db.perfil || {},
-        postos: dadosLocais.postos || db.postos || [],
-        rondas: [],
-        intervaloAtivo: dadosLocais.intervaloAtivo || db.intervaloAtivo || null
-    };
-
-    localStorage.setItem('sentinela_ops_db', JSON.stringify(baseAtualizada));
-
-    const chavesParaRemover = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const chave = localStorage.key(i);
-        if (chave && chave !== 'sentinela_ops_db' && chave.toLowerCase().includes('ronda')) {
-            chavesParaRemover.push(chave);
-        }
-    }
-
-    chavesParaRemover.forEach(chave => localStorage.removeItem(chave));
+    saveLocal();
 }
 
-// --- OUTRAS FUNÇÕES ---
-function atualizarSelectPostos() {
-    const sel = document.getElementById('r-posto');
-    sel.innerHTML = '<option value="">Selecione o posto...</option>';
-    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
-}
-
+// --- PERFIL (CORRIGIDO) ---
 async function salvarPerfil() {
     const p = {
         nome: document.getElementById('p-nome').value,
@@ -474,9 +425,9 @@ async function salvarPerfil() {
         empresa: document.getElementById('p-empresa').value,
         cnpj: document.getElementById('p-cnpj').value
     };
-    db.perfil = p;
+    db.perfil = { ...db.perfil, ...p };
     saveLocal();
-    await fs.collection("usuarios").doc(auth.currentUser.uid).set(p);
+    await fs.collection("usuarios").doc(auth.currentUser.uid).update(p);
     alert("✅ Perfil salvo!");
 }
 
@@ -490,79 +441,11 @@ function preencherCamposPerfil() {
     document.getElementById('p-cnpj').value = p.cnpj || "";
 }
 
-// --- FUNÇÃO ATUALIZADA: RELATÓRIO DE PLANTÃO ---
-function gerarRelatorioPlantao() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const p = db.perfil;
-    let y = 20;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
-    
-    y += 15;
-    doc.setFontSize(10);
-    doc.text("DADOS DO OPERADOR", 10, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
-    doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
-    y += 5;
-    doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
-    doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
-
-    y += 10;
-    doc.setLineWidth(0.5);
-    doc.line(10, y, 200, y);
-    y += 10;
-
-    doc.setFont("helvetica", "bold");
-    doc.text("REGISTROS DE ATIVIDADES", 10, y);
-    y += 8;
-
-    db.rondas.forEach((r, index) => {
-        if(y > 260) {
-            doc.addPage();
-            y = 20;
-            doc.setFont("helvetica", "bold");
-            doc.text("CONTINUAÇÃO - REGISTROS DE ATIVIDADES", 10, y);
-            y += 10;
-        }
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
-        
-        y += 5;
-        doc.setFont("helvetica", "normal");
-        doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
-        
-        y += 5;
-        doc.text(`Motivo: ${r.motivo} | VTR: ${p.placa || "N/A"} | KM: ${r.km}`, 15, y);
-        
-        y += 5;
-        const obs = doc.splitTextToSize(`Obs: ${r.obs}`, 180);
-        doc.text(obs, 15, y);
-        
-        y += (obs.length * 5) + 5;
-        doc.setDrawColor(200);
-        doc.line(15, y - 2, 195, y - 2);
-        y += 5;
-    });
-
-    if(y > 270) { doc.addPage(); y = 20; }
-    y += 10;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text("DADOS DA EMPRESA", 10, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.text(`Empresa: ${p.empresa || "N/A"}`, 10, y);
-    y += 5;
-    doc.text(`CNPJ: ${p.cnpj || "N/A"}`, 10, y);
-
-    doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+// --- AUXILIARES ---
+function atualizarSelectPostos() {
+    const sel = document.getElementById('r-posto');
+    sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
 }
 
 function toggleCheck(el) { el.classList.toggle('ok'); }
@@ -598,6 +481,40 @@ function limparFormRonda() {
     document.getElementById('r-func').value = "";
     fotoBase64 = "";
     document.getElementById('r-foto').value = "";
+}
+
+function gerarRelatorioPlantao() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const p = db.perfil;
+    let y = 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
+    y += 15;
+    doc.setFontSize(10);
+    doc.text("DADOS DO OPERADOR", 10, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
+    doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
+    y += 5;
+    doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
+    doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
+    y += 10;
+    doc.setLineWidth(0.5); doc.line(10, y, 200, y); y += 10;
+    doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
+    db.rondas.forEach((r, index) => {
+        if(y > 260) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+        doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
+        y += 5; doc.setFont("helvetica", "normal");
+        doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
+        y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
+        y += 5; const obs = doc.splitTextToSize(`Obs: ${r.obs}`, 180); doc.text(obs, 15, y);
+        y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
+    });
+    doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
 }
 </script>
 </body>
