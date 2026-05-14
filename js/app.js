@@ -43,10 +43,21 @@ let fotoBase64 = "";
 
 function saveLocal() {
 
-    localStorage.setItem(
-        'sentinela_ops_db',
-        JSON.stringify(window.db)
-    );
+    try {
+
+        localStorage.setItem(
+            'sentinela_ops_db',
+            JSON.stringify(window.db)
+        );
+
+    } catch (e) {
+
+        console.error(
+            "Erro ao salvar local:",
+            e
+        );
+
+    }
 
 }
 
@@ -60,27 +71,59 @@ async function carregarDadosSincronizados(uid) {
     try {
 
         // ===============================
+        // VALIDAÇÕES
+        // ===============================
+
+        if (!uid) {
+
+            console.error("UID inválido");
+            return;
+
+        }
+
+        if (!window.fs) {
+
+            console.error("Firestore não iniciado");
+            return;
+
+        }
+
+
+        // ===============================
         // PERFIL
         // ===============================
 
-        const docP = await fs
-            .collection("usuarios")
-            .doc(uid)
-            .get();
+        try {
 
-        if (docP.exists) {
+            const docP = await fs
+                .collection("usuarios")
+                .doc(uid)
+                .get();
 
-            window.db.perfil = docP.data();
+            if (docP.exists) {
 
-            console.log(
-                "PERFIL CARREGADO:",
-                window.db.perfil
-            );
+                window.db.perfil = docP.data();
 
-        } else {
+                console.log(
+                    "PERFIL CARREGADO:",
+                    window.db.perfil
+                );
 
-            console.warn(
-                "Perfil não encontrado no Firestore"
+            } else {
+
+                console.warn(
+                    "Perfil não encontrado"
+                );
+
+                window.db.perfil = {};
+
+            }
+
+        } catch (e) {
+
+            console.error(
+                "Erro ao carregar perfil:",
+                e
             );
 
             window.db.perfil = {};
@@ -92,31 +135,66 @@ async function carregarDadosSincronizados(uid) {
         // POSTOS
         // ===============================
 
-        const snapPostos = await fs
-            .collection("postos")
-            .get();
+        try {
 
-        window.db.postos = snapPostos.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+            const snapPostos = await fs
+                .collection("postos")
+                .get();
+
+            window.db.postos = snapPostos.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            console.log(
+                "POSTOS CARREGADOS:",
+                window.db.postos.length
+            );
+
+        } catch (e) {
+
+            console.error(
+                "Erro ao carregar postos:",
+                e
+            );
+
+            window.db.postos = [];
+
+        }
 
 
         // ===============================
         // RONDAS
         // ===============================
 
-        const snapRondas = await fs
-            .collection("rondas")
-            .where("uid", "==", uid)
-            .orderBy("timestamp", "desc")
-            .limit(30)
-            .get();
+        try {
 
-        window.db.rondas = snapRondas.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+            const snapRondas = await fs
+                .collection("rondas")
+                .where("uid", "==", uid)
+                .limit(30)
+                .get();
+
+            window.db.rondas = snapRondas.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            console.log(
+                "RONDAS CARREGADAS:",
+                window.db.rondas.length
+            );
+
+        } catch (e) {
+
+            console.error(
+                "Erro ao carregar rondas:",
+                e
+            );
+
+            window.db.rondas = [];
+
+        }
 
 
         // ===============================
@@ -130,17 +208,21 @@ async function carregarDadosSincronizados(uid) {
         // ABRE HOME
         // ===============================
 
-        showView('home');
+        if (typeof showView === "function") {
+
+            showView('home');
+
+        }
+
+        console.log(
+            "SISTEMA CARREGADO COM SUCESSO"
+        );
 
     } catch (erro) {
 
         console.error(
-            "ERRO AO CARREGAR DADOS:",
+            "ERRO GERAL:",
             erro
-        );
-
-        alert(
-            "Erro ao carregar dados do sistema."
         );
 
     }
@@ -154,35 +236,35 @@ async function carregarDadosSincronizados(uid) {
 
 function showView(v) {
 
-    // ESCONDE TELAS
     document.querySelectorAll(
         '#view-home, #view-rondas, #view-postos, #view-perfil'
     ).forEach(el => {
         el.classList.add('hidden');
     });
 
-    // MOSTRA TELA
     const view = document.getElementById(
         'view-' + v
     );
 
     if (view) {
+
         view.classList.remove('hidden');
+
     }
 
-    // REMOVE ACTIVE
     document.querySelectorAll('.nav-item')
         .forEach(i => {
             i.classList.remove('active');
         });
 
-    // ATIVA NAV
     const nav = document.getElementById(
         'nav-' + v
     );
 
     if (nav) {
+
         nav.classList.add('active');
+
     }
 
     // ===============================
@@ -203,11 +285,15 @@ function showView(v) {
         }
 
         if (typeof atualizarSelectPostos === "function") {
+
             atualizarSelectPostos();
+
         }
 
         if (typeof renderRondas === "function") {
+
             renderRondas();
+
         }
 
     }
@@ -219,7 +305,9 @@ function showView(v) {
     if (v === 'perfil') {
 
         if (typeof preencherCamposPerfil === "function") {
+
             preencherCamposPerfil();
+
         }
 
     }
@@ -230,12 +318,10 @@ function showView(v) {
 
     if (v === 'postos') {
 
-        console.log(
-            "POSTOS ABERTO"
-        );
-
         if (typeof renderPostos === "function") {
+
             renderPostos();
+
         }
 
     }
