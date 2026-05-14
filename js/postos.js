@@ -1,3 +1,14 @@
+async function adicionarPosto() {
+    const nome = prompt("Nome do Posto:");
+    if(!nome) return;
+    const endereco = prompt("Endereço:");
+    const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
+    const docRef = await fs.collection("postos").add(novoPosto);
+    db.postos.push({ id: docRef.id, ...novoPosto });
+    saveLocal();
+    renderPostos();
+}
+
 function renderPostos() {
 
     // VERIFICA CAMPO BUSCA
