@@ -1,5 +1,4 @@
 async function adicionarPosto() {
-
     // SOMENTE ADMIN
     if (!db.perfil || !db.perfil.admin) {
         alert("Apenas administradores podem criar postos.");
@@ -64,7 +63,7 @@ function renderPostos() {
     // GARANTE ARRAY
     const lista = db.postos || [];
 
-    // FILTRO COM ORDEM ALFABÉTICA ADICIONADA
+    // FILTRO COM ORDEM ALFABÉTICA
     const filtrados = lista
         .filter(p => p.nome.includes(busca))
         .sort((a, b) => a.nome.localeCompare(b.nome));
