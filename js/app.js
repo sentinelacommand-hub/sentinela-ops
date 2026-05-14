@@ -1,51 +1,56 @@
-let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
-let fotoBase64 = "";
+const router = {
+    views: {
+        login: `
+            <div class="login-container">
+                <h2>Acesso ao Sistema</h2>
+                <input type="email" id="email" placeholder="E-mail">
+                <input type="password" id="password" placeholder="Senha">
+                <button class="btn-primary" onclick="auth.login()">Entrar</button>
+            </div>
+        `,
+        home: `
+            <h1>Dashboard Operacional</h1>
+            <div class="grid">
+                <div class="card"><h3>Rondas Hoje</h3><p id="count-rondas">0</p></div>
+                <div class="card"><h3>Ocorrências</h3><p id="count-ocor">0</p></div>
+            </div>
+            <h2>Atividades Recentes</h2>
+            <div id="recent-activity"></div>
+        `,
+        rondas: `
+            <h1>Registrar Ronda</h1>
+            <div class="card">
+                <select id="posto-select"></select>
+                <textarea id="obs" placeholder="Observações do Supervisor"></textarea>
+                <input type="file" id="foto" accept="image/*">
+                <button class="btn-primary" onclick="rondas.save()">Finalizar Ronda</button>
+            </div>
+            <div id="lista-rondas"></div>
+        `
+    },
 
-function saveLocal() { 
-    localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); 
-}
+    navigate(viewName) {
+        const user = firebase.auth().currentUser;
+        if (!user && viewName !== 'login') {
+            this.navigate('login');
+            return;
+        }
 
-async function carregarDadosSincronizados(uid) {
-    const docP = await fs.collection("usuarios").doc(uid).get();
-    if (docP.exists) db.perfil = docP.data();
-
-    const snapPostos = await fs.collection("postos").where("uid", "==", uid).get();
-    db.postos = snapPostos.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    const snapRondas = await fs.collection("rondas").where("uid", "==", uid).orderBy("timestamp", "desc").limit(30).get();
-    db.rondas = snapRondas.docs.map(d => d.data());
-
-    saveLocal();
-    showView('home');
-}
-
-function showView(v) {
-    document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-    document.getElementById('view-' + v).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    document.getElementById('nav-' + v).classList.add('active');
-
-    if (v === 'rondas') {
-        document.getElementById('r-placa').value = db.perfil.placa || "N/A";
-        atualizarSelectPostos();
-        renderRondas();
+        document.getElementById('app').innerHTML = this.views[viewName];
+        
+        // Inicializa lógicas específicas da view
+        if (viewName === 'rondas') rondas.loadPostos();
+        if (viewName === 'home') dashboard.loadStats();
     }
-    if (v === 'perfil') preencherCamposPerfil();
-    if (v === 'postos') renderPostos();
-}
+};
 
-// Lógica de intervalo mantida conforme original (chamada no HTML)
-function gerenciarIntervalo() {
-    const btn = document.getElementById('btn-intervalo');
-    if (!db.intervaloAtivo) {
-        db.intervaloAtivo = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        btn.innerText = "🏁 FINALIZAR INTERVALO (" + db.intervaloAtivo + ")";
-        btn.classList.replace('btn-info', 'btn-danger');
+// Listener de autenticação
+firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById('sidebar').classList.remove('hidden');
+        router.navigate('home');
     } else {
-        alert("Intervalo iniciado às " + db.intervaloAtivo + " finalizado agora.");
-        db.intervaloAtivo = null;
-        btn.innerText = "☕ INICIAR INTERVALO";
-        btn.classList.replace('btn-danger', 'btn-info');
+        router.navigate('login');
     }
-    saveLocal();
-}
+    document.getElementById('loader').style.display = 'none';
+});
