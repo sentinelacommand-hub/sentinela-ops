@@ -128,9 +128,11 @@ const lista = db.postos || [];
 
 // FILTRO
 
-const filtrados = lista
-    .filter(p => p.nome.includes(busca))
-    .sort((a, b) => a.nome.localeCompare(b.nome));
+const filtrados = lista.filter(p =>
+
+p.nome.includes(busca)
+
+);
 
 
 
