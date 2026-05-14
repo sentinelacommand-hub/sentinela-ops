@@ -1,98 +1,306 @@
+// ===============================
 // BANCO GLOBAL
-// CORREÇÃO: Declarado explicitamente para garantir escopo e adicionado try/catch para estabilidade
-window.db = (function() {
+// ===============================
+
+window.db = (function () {
+
     try {
+
         const data = localStorage.getItem('sentinela_ops_db');
-        return data ? JSON.parse(data) : {
+
+        return data
+            ? JSON.parse(data)
+            : {
+                perfil: {},
+                postos: [],
+                rondas: [],
+                intervaloAtivo: null
+            };
+
+    } catch (e) {
+
+        console.error("Erro ao carregar DB:", e);
+
+        return {
             perfil: {},
             postos: [],
             rondas: [],
             intervaloAtivo: null
         };
-    } catch (e) {
-        console.error("Erro ao carregar DB, resetando...", e);
-        return { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
+
     }
+
 })();
 
-// Atalho para manter compatibilidade com as funções que usam 'db' diretamente
-const db = window.db; 
+// COMPATIBILIDADE GLOBAL
+window.fotoBase64 = "";
+window.db = window.db;
 
-let fotoBase64 = "";
 
+// ===============================
 // SALVAR LOCAL
+// ===============================
+
 function saveLocal() {
-    // CORREÇÃO: Referência direta ao window.db para garantir integridade dos dados
+
     localStorage.setItem(
         'sentinela_ops_db',
         JSON.stringify(window.db)
     );
+
 }
 
+window.saveLocal = saveLocal;
+
+
+// ===============================
+// CARREGAR DADOS FIREBASE
+// ===============================
+
+async function carregarDadosSincronizados(uid) {
+
+    try {
+
+        console.log("Sincronizando dados...");
+
+        // =====================
+        // PERFIL
+        // =====================
+
+        const docP = await fs.collection("usuarios")
+            .doc(uid)
+            .get();
+
+        if (docP.exists) {
+
+            window.db.perfil = docP.data();
+
+        }
+
+        // =====================
+        // POSTOS
+        // =====================
+
+        const snapPostos = await fs.collection("postos")
+            .get();
+
+        window.db.postos = snapPostos.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // =====================
+        // RONDAS
+        // =====================
+
+        const snapRondas = await fs.collection("rondas")
+            .where("uid", "==", uid)
+            .orderBy("timestamp", "desc")
+            .limit(30)
+            .get();
+
+        window.db.rondas = snapRondas.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // =====================
+        // SALVA LOCAL
+        // =====================
+
+        saveLocal();
+
+        console.log("Dados sincronizados!");
+
+        // =====================
+        // ABRE HOME
+        // =====================
+
+        showView('home');
+
+    } catch (erro) {
+
+        console.error(
+            "ERRO AO CARREGAR DADOS:",
+            erro
+        );
+
+        alert(
+            "Erro ao carregar dados do sistema."
+        );
+
+    }
+
+}
+
+window.carregarDadosSincronizados = carregarDadosSincronizados;
+
+
+// ===============================
 // TROCAR TELAS
+// ===============================
+
 function showView(v) {
 
-    // ESCONDE APENAS AS TELAS INTERNAS
+    // ESCONDE TELAS
     document.querySelectorAll(
         '#view-home, #view-rondas, #view-postos, #view-perfil'
     ).forEach(el => {
+
         el.classList.add('hidden');
+
     });
 
-    // MOSTRA A VIEW
+    // MOSTRA TELA
     const view = document.getElementById('view-' + v);
 
     if (view) {
+
         view.classList.remove('hidden');
+
     }
 
-    // REMOVE ACTIVE DOS BOTÕES
+    // REMOVE ACTIVE
     document.querySelectorAll('.nav-item')
-        .forEach(i => i.classList.remove('active'));
+        .forEach(i => {
 
-    // ATIVA BOTÃO ATUAL
+            i.classList.remove('active');
+
+        });
+
+    // ATIVA MENU
     const nav = document.getElementById('nav-' + v);
 
     if (nav) {
+
         nav.classList.add('active');
+
     }
 
-    // ===== HOME =====
-    if (v === 'home') {
-        console.log("HOME ABERTA");
-    }
+    // =====================
+    // RONDAS
+    // =====================
 
-    // ===== RONDAS =====
     if (v === 'rondas') {
 
         const placa = document.getElementById('r-placa');
 
         if (placa) {
-            // CORREÇÃO: O uso do encadeamento opcional ?. já previne erros aqui
-            placa.value = db?.perfil?.placa || "N/A";
+
+            placa.value =
+                window.db?.perfil?.placa || "N/A";
+
         }
 
         if (typeof atualizarSelectPostos === "function") {
+
             atualizarSelectPostos();
+
         }
 
         if (typeof renderRondas === "function") {
+
             renderRondas();
+
         }
+
     }
 
-    // ===== PERFIL =====
+    // =====================
+    // PERFIL
+    // =====================
+
     if (v === 'perfil') {
+
         if (typeof preencherCamposPerfil === "function") {
+
             preencherCamposPerfil();
+
         }
+
     }
 
-    // ===== POSTOS =====
+    // =====================
+    // POSTOS
+    // =====================
+
     if (v === 'postos') {
+
         console.log("POSTOS ABERTO");
+
         if (typeof renderPostos === "function") {
+
             renderPostos();
+
         }
+
     }
+
 }
+
+window.showView = showView;
+
+
+// ===============================
+// GERENCIAR INTERVALO
+// ===============================
+
+function gerenciarIntervalo() {
+
+    const btn =
+        document.getElementById('btn-intervalo');
+
+    if (!window.db.intervaloAtivo) {
+
+        window.db.intervaloAtivo =
+            new Date().toLocaleTimeString(
+                'pt-BR',
+                {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }
+            );
+
+        if (btn) {
+
+            btn.innerText =
+                "🏁 FINALIZAR INTERVALO (" +
+                window.db.intervaloAtivo +
+                ")";
+
+            btn.classList.replace(
+                'btn-info',
+                'btn-danger'
+            );
+
+        }
+
+    } else {
+
+        alert(
+            "Intervalo iniciado às " +
+            window.db.intervaloAtivo +
+            " finalizado agora."
+        );
+
+        window.db.intervaloAtivo = null;
+
+        if (btn) {
+
+            btn.innerText =
+                "☕ INICIAR INTERVALO";
+
+            btn.classList.replace(
+                'btn-danger',
+                'btn-info'
+            );
+
+        }
+
+    }
+
+    saveLocal();
+
+}
+
+window.gerenciarIntervalo = gerenciarIntervalo;
