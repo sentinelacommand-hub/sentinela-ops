@@ -1,48 +1,303 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TacticalOps - Sistema de Rondas</title>
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
-    <!-- jsPDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
-<body class="dark-theme">
-    
-    <div id="loader" class="loader">Carregando Sistema...</div>
+<!-- FIREBASE SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-    <!-- Navegação Sidebar -->
-    <nav id="sidebar" class="hidden">
-        <div class="logo">TACTICAL<span>OPS</span></div>
-        <ul class="nav-links">
-            <li onclick="router.navigate('home')">Dashboard</li>
-            <li onclick="router.navigate('rondas')">Rondas</li>
-            <li onclick="router.navigate('postos')">Postos</li>
-            <li id="admin-link" onclick="router.navigate('usuarios')" class="hidden">Usuários</li>
-            <li onclick="router.navigate('perfil')">Perfil</li>
-            <li onclick="auth.logout()" class="logout-btn">Sair</li>
-        </ul>
-    </nav>
+<script>
+// =====================================================
+// FIREBASE CONFIG - ATUALIZADO
+// =====================================================
 
-    <!-- Conteúdo Principal -->
-    <main id="app"></main>
+const firebaseConfig = {
+  apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
+  authDomain: "sentinela-ops-profissional.firebaseapp.com",
+  projectId: "sentinela-ops-profissional",
+  storageBucket: "sentinela-ops-profissional.firebasestorage.app",
+  messagingSenderId: "458111218365",
+  appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
+};
 
-    <!-- Mobile Navigation -->
-    <nav id="bottom-nav" class="hidden">
-        <button onclick="router.navigate('home')">Home</button>
-        <button onclick="router.navigate('rondas')">Ronda</button>
-        <button onclick="router.navigate('perfil')">Perfil</button>
-    </nav>
+// INICIALIZA FIREBASE
+firebase.initializeApp(firebaseConfig);
 
-    <script src="js/firebase.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/views.js"></script>
-    <script src="js/app.js"></script>
-</body>
-</html>
+// SERVIÇOS
+const auth = firebase.auth();
+const fs = firebase.firestore();
+const storage = firebase.storage();
+
+// =====================================================
+// BASE LOCAL
+// =====================================================
+
+let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || {
+    perfil: {},
+    postos: [],
+    rondas: [],
+    intervaloAtivo: null
+};
+
+let fotoBase64 = "";
+
+// =====================================================
+// LOGIN / AUTH
+// =====================================================
+
+auth.onAuthStateChanged(user => {
+
+    if (user) {
+
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+
+        carregarDadosSincronizados(user.uid);
+
+    } else {
+
+        document.getElementById('view-login').classList.remove('hidden');
+        document.getElementById('app-content').classList.add('hidden');
+
+    }
+});
+
+function login() {
+
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+
+    if (!e || !s) {
+        return alert("Preencha email e senha!");
+    }
+
+    auth.signInWithEmailAndPassword(e, s)
+        .catch(err => {
+
+            console.error(err);
+            alert("Erro no login: " + err.message);
+
+        });
+}
+
+function cadastrar() {
+
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+
+    if (!e || !s) {
+        return alert("Preencha email e senha!");
+    }
+
+    auth.createUserWithEmailAndPassword(e, s)
+        .then(() => {
+
+            alert("Conta criada com sucesso!");
+
+        })
+        .catch(err => {
+
+            console.error(err);
+            alert("Erro ao criar conta: " + err.message);
+
+        });
+}
+
+function logout() {
+
+    auth.signOut();
+
+}
+
+// =====================================================
+// STORAGE LOCAL
+// =====================================================
+
+function saveLocal() {
+
+    localStorage.setItem(
+        'sentinela_ops_db',
+        JSON.stringify(db)
+    );
+}
+
+// =====================================================
+// CARREGAR DADOS FIREBASE
+// =====================================================
+
+async function carregarDadosSincronizados(uid) {
+
+    try {
+
+        // PERFIL
+        const docP = await fs
+            .collection("usuarios")
+            .doc(uid)
+            .get();
+
+        if (docP.exists) {
+            db.perfil = docP.data();
+        }
+
+        // POSTOS
+        const snapPostos = await fs
+            .collection("postos")
+            .where("uid", "==", uid)
+            .get();
+
+        db.postos = snapPostos.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+        // RONDAS
+        const snapRondas = await fs
+            .collection("rondas")
+            .where("uid", "==", uid)
+            .orderBy("timestamp", "desc")
+            .limit(30)
+            .get();
+
+        db.rondas = snapRondas.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+        saveLocal();
+
+        showView('home');
+
+    } catch (e) {
+
+        console.error(e);
+        alert("Erro ao carregar dados!");
+
+    }
+}
+
+// =====================================================
+// VIEWS
+// =====================================================
+
+function showView(v) {
+
+    document
+        .querySelectorAll('.container')
+        .forEach(el => el.classList.add('hidden'));
+
+    document
+        .getElementById('view-' + v)
+        .classList.remove('hidden');
+
+    document
+        .querySelectorAll('.nav-item')
+        .forEach(i => i.classList.remove('active'));
+
+    document
+        .getElementById('nav-' + v)
+        .classList.add('active');
+
+    if (v === 'rondas') {
+
+        document.getElementById('r-placa').value =
+            db.perfil.placa || "N/A";
+
+        atualizarSelectPostos();
+
+        renderRondas();
+    }
+
+    if (v === 'perfil') {
+        preencherCamposPerfil();
+    }
+
+    if (v === 'postos') {
+        renderPostos();
+    }
+}
+
+// =====================================================
+// SALVAR RONDA
+// =====================================================
+
+async function salvarRonda() {
+
+    const posto = document.getElementById('r-posto').value;
+
+    if (!posto) {
+        return alert("Selecione um posto!");
+    }
+
+    const checklist = {};
+
+    document
+        .querySelectorAll('#checklist .check-item')
+        .forEach(i => {
+
+            checklist[i.innerText] =
+                i.classList.contains('ok')
+                    ? 'OK'
+                    : 'PENDENTE';
+
+        });
+
+    const novaRonda = {
+
+        id: Date.now(),
+
+        uid: auth.currentUser.uid,
+
+        posto: posto,
+
+        motivo: document.getElementById('r-motivo').value,
+
+        km: document.getElementById('r-km').value || '0',
+
+        data: new Date().toLocaleDateString('pt-BR'),
+
+        hora: new Date().toLocaleTimeString(
+            'pt-BR',
+            {
+                hour: '2-digit',
+                minute: '2-digit'
+            }
+        ),
+
+        colaborador:
+            document.getElementById('r-func').value || "N/A",
+
+        obs:
+            document.getElementById('r-obs').value ||
+            "Sem alterações",
+
+        checklist: checklist,
+
+        foto: fotoBase64,
+
+        timestamp:
+            firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+
+        await fs.collection("rondas").add(novaRonda);
+
+        db.rondas.unshift(novaRonda);
+
+        saveLocal();
+
+        renderRondas();
+
+        gerarCardIndividual(novaRonda);
+
+        limparFormRonda();
+
+        alert("✅ Ronda salva!");
+
+    } catch (e) {
+
+        console.error(e);
+
+        alert("Erro ao salvar ronda!");
+
+    }
+}
+</script>
