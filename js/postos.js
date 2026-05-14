@@ -1,12 +1,13 @@
 async function adicionarPosto() {
 
     // SOMENTE ADMIN
-    if (!db.perfil.admin) {
+    if (!db.perfil || !db.perfil.admin) {
         alert("Apenas administradores podem criar postos.");
         return;
     }
 
     const nome = prompt("Nome do Posto:");
+
     if (!nome) return;
 
     const endereco = prompt("Endereço:");
@@ -19,7 +20,8 @@ async function adicionarPosto() {
     try {
 
         // SALVA NO FIREBASE
-        const docRef = await fs.collection("postos").add(novoPosto);
+        const docRef = await fs.collection("postos")
+            .add(novoPosto);
 
         // SALVA LOCAL
         db.postos.push({
@@ -45,22 +47,34 @@ async function adicionarPosto() {
 
 function renderPostos() {
 
-    const busca = document
-        .getElementById('busca-posto')
-        .value
-        .toUpperCase();
+    // VERIFICA CAMPO BUSCA
+    const campoBusca =
+        document.getElementById('busca-posto');
 
-    const container = document.getElementById('lista-postos');
+    const busca = campoBusca
+        ? campoBusca.value.toUpperCase()
+        : "";
 
-    const filtrados = db.postos.filter(p =>
+    // VERIFICA CONTAINER
+    const container =
+        document.getElementById('lista-postos');
+
+    if (!container) return;
+
+    // GARANTE ARRAY
+    const lista = db.postos || [];
+
+    // FILTRO
+    const filtrados = lista.filter(p =>
         p.nome.includes(busca)
     );
 
+    // RENDERIZA
     container.innerHTML = filtrados.map((p, i) => `
 
         <div class="posto-item">
 
-            <div style="flex:1;" onclick="editarPosto('${p.id}', ${i})">
+            <div style="flex:1;">
 
                 <b>${p.nome}</b><br>
 
@@ -81,7 +95,7 @@ function renderPostos() {
                     ROTA
                 </button>
 
-                ${db.perfil.admin ? `
+                ${db.perfil && db.perfil.admin ? `
 
                     <button
                         onclick="editarPosto('${p.id}', ${i})"
@@ -106,17 +120,20 @@ function renderPostos() {
         </div>
 
     `).join('');
+
 }
 
 async function editarPosto(id, index) {
 
     // SOMENTE ADMIN
-    if (!db.perfil.admin) {
+    if (!db.perfil || !db.perfil.admin) {
         alert("Apenas administradores podem editar postos.");
         return;
     }
 
     const posto = db.postos[index];
+
+    if (!posto) return;
 
     const novoNome = prompt(
         "Editar nome do Posto:",
@@ -137,12 +154,12 @@ async function editarPosto(id, index) {
 
     try {
 
-        // ATUALIZA FIREBASE
+        // FIREBASE
         await fs.collection("postos")
             .doc(id)
             .update(dadosAtualizados);
 
-        // ATUALIZA LOCAL
+        // LOCAL
         db.postos[index] = {
             ...posto,
             ...dadosAtualizados
@@ -167,7 +184,7 @@ async function editarPosto(id, index) {
 async function excluirPosto(id, index) {
 
     // SOMENTE ADMIN
-    if (!db.perfil.admin) {
+    if (!db.perfil || !db.perfil.admin) {
         alert("Apenas administradores podem excluir postos.");
         return;
     }
@@ -176,12 +193,12 @@ async function excluirPosto(id, index) {
 
     try {
 
-        // REMOVE FIREBASE
+        // FIREBASE
         await fs.collection("postos")
             .doc(id)
             .delete();
 
-        // REMOVE LOCAL
+        // LOCAL
         db.postos.splice(index, 1);
 
         saveLocal();
@@ -200,12 +217,13 @@ async function excluirPosto(id, index) {
 
 }
 
-// CARREGA TODOS OS POSTOS DO FIREBASE
+// CARREGAR POSTOS
 async function carregarPostos() {
 
     try {
 
-        const snapshot = await fs.collection("postos").get();
+        const snapshot =
+            await fs.collection("postos").get();
 
         db.postos = [];
 
@@ -224,7 +242,10 @@ async function carregarPostos() {
 
     } catch (erro) {
 
-        console.error("Erro ao carregar postos:", erro);
+        console.error(
+            "Erro ao carregar postos:",
+            erro
+        );
 
     }
 
