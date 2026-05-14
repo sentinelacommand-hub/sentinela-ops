@@ -1,89 +1,28 @@
-let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || {
-    perfil: {},
-    postos: [],
-    rondas: [],
-    intervaloAtivo: null
-};
-
-let fotoBase64 = "";
-
-// SALVAR LOCAL
-function saveLocal() {
-
-    localStorage.setItem(
-        'sentinela_ops_db',
-        JSON.stringify(db)
-    );
-
-}
-
-// CARREGAR DADOS FIREBASE
-async function carregarDadosSincronizados(uid) {
-
-    try {
-
-        // PERFIL
-        const docP = await fs.collection("usuarios")
-            .doc(uid)
-            .get();
-
-        if (docP.exists) {
-            db.perfil = docP.data();
-        }
-
-        // TODOS OS POSTOS
-        const snapPostos = await fs.collection("postos").get();
-
-        db.postos = snapPostos.docs.map(d => ({
-            id: d.id,
-            ...d.data()
-        }));
-
-        // RONDAS
-        const snapRondas = await fs.collection("rondas")
-            .where("uid", "==", uid)
-            .orderBy("timestamp", "desc")
-            .limit(30)
-            .get();
-
-        db.rondas = snapRondas.docs.map(d => d.data());
-
-        // SALVA LOCAL
-        saveLocal();
-
-        // ABRE HOME
-        showView('home');
-
-    } catch (erro) {
-
-        console.error(
-            "ERRO AO CARREGAR DADOS:",
-            erro
-        );
-
-        alert(
-            "Erro ao carregar dados do sistema.\n" +
-            "Verifique as regras do Firestore."
-        );
-
-    }
-
-}
-
-// TROCAR TELAS
 function showView(v) {
 
-    document.querySelectorAll('.container')
-        .forEach(el => el.classList.add('hidden'));
+    // ESCONDE SOMENTE AS TELAS INTERNAS
+    document.querySelectorAll(
+        '#view-home, #view-rondas, #view-postos, #view-perfil'
+    ).forEach(el => {
+        el.classList.add('hidden');
+    });
 
-    document.getElementById('view-' + v)
-        .classList.remove('hidden');
+    // MOSTRA A TELA
+    const view = document.getElementById('view-' + v);
 
+    if (view) {
+        view.classList.remove('hidden');
+    }
+
+    // NAVBAR
     document.querySelectorAll('.nav-item')
         .forEach(i => i.classList.remove('active'));
 
-    document.getElementById('nav-' + v)
-        .classList.add('active');
+    const nav = document.getElementById('nav-' + v);
+
+    if (nav) {
+        nav.classList.add('active');
+    }
 
     // RONDAS
     if (v === 'rondas') {
@@ -101,7 +40,6 @@ function showView(v) {
         if (typeof renderRondas === "function") {
             renderRondas();
         }
-
     }
 
     // PERFIL
@@ -110,7 +48,6 @@ function showView(v) {
         if (typeof preencherCamposPerfil === "function") {
             preencherCamposPerfil();
         }
-
     }
 
     // POSTOS
@@ -119,53 +56,5 @@ function showView(v) {
         if (typeof renderPostos === "function") {
             renderPostos();
         }
-
     }
-
-}
-
-// INTERVALO
-function gerenciarIntervalo() {
-
-    const btn = document.getElementById('btn-intervalo');
-
-    if (!db.intervaloAtivo) {
-
-        db.intervaloAtivo = new Date()
-            .toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-        btn.innerText =
-            "🏁 FINALIZAR INTERVALO (" +
-            db.intervaloAtivo +
-            ")";
-
-        btn.classList.replace(
-            'btn-info',
-            'btn-danger'
-        );
-
-    } else {
-
-        alert(
-            "Intervalo iniciado às " +
-            db.intervaloAtivo +
-            " finalizado agora."
-        );
-
-        db.intervaloAtivo = null;
-
-        btn.innerText = "☕ INICIAR INTERVALO";
-
-        btn.classList.replace(
-            'btn-danger',
-            'btn-info'
-        );
-
-    }
-
-    saveLocal();
-
 }
