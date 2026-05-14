@@ -19,7 +19,10 @@ window.db = (function () {
 
     } catch (e) {
 
-        console.error("Erro ao carregar DB:", e);
+        console.error(
+            "Erro ao carregar banco local:",
+            e
+        );
 
         return {
             perfil: {},
@@ -27,14 +30,11 @@ window.db = (function () {
             rondas: [],
             intervaloAtivo: null
         };
-
     }
 
 })();
 
-// COMPATIBILIDADE GLOBAL
-window.fotoBase64 = "";
-window.db = window.db;
+let fotoBase64 = "";
 
 
 // ===============================
@@ -50,8 +50,6 @@ function saveLocal() {
 
 }
 
-window.saveLocal = saveLocal;
-
 
 // ===============================
 // CARREGAR DADOS FIREBASE
@@ -61,13 +59,12 @@ async function carregarDadosSincronizados(uid) {
 
     try {
 
-        console.log("Sincronizando dados...");
-
-        // =====================
+        // ===============================
         // PERFIL
-        // =====================
+        // ===============================
 
-        const docP = await fs.collection("usuarios")
+        const docP = await fs
+            .collection("usuarios")
             .doc(uid)
             .get();
 
@@ -75,13 +72,28 @@ async function carregarDadosSincronizados(uid) {
 
             window.db.perfil = docP.data();
 
+            console.log(
+                "PERFIL CARREGADO:",
+                window.db.perfil
+            );
+
+        } else {
+
+            console.warn(
+                "Perfil não encontrado no Firestore"
+            );
+
+            window.db.perfil = {};
+
         }
 
-        // =====================
-        // POSTOS
-        // =====================
 
-        const snapPostos = await fs.collection("postos")
+        // ===============================
+        // POSTOS
+        // ===============================
+
+        const snapPostos = await fs
+            .collection("postos")
             .get();
 
         window.db.postos = snapPostos.docs.map(doc => ({
@@ -89,11 +101,13 @@ async function carregarDadosSincronizados(uid) {
             ...doc.data()
         }));
 
-        // =====================
-        // RONDAS
-        // =====================
 
-        const snapRondas = await fs.collection("rondas")
+        // ===============================
+        // RONDAS
+        // ===============================
+
+        const snapRondas = await fs
+            .collection("rondas")
             .where("uid", "==", uid)
             .orderBy("timestamp", "desc")
             .limit(30)
@@ -104,17 +118,17 @@ async function carregarDadosSincronizados(uid) {
             ...doc.data()
         }));
 
-        // =====================
+
+        // ===============================
         // SALVA LOCAL
-        // =====================
+        // ===============================
 
         saveLocal();
 
-        console.log("Dados sincronizados!");
 
-        // =====================
+        // ===============================
         // ABRE HOME
-        // =====================
+        // ===============================
 
         showView('home');
 
@@ -133,8 +147,6 @@ async function carregarDadosSincronizados(uid) {
 
 }
 
-window.carregarDadosSincronizados = carregarDadosSincronizados;
-
 
 // ===============================
 // TROCAR TELAS
@@ -146,44 +158,42 @@ function showView(v) {
     document.querySelectorAll(
         '#view-home, #view-rondas, #view-postos, #view-perfil'
     ).forEach(el => {
-
         el.classList.add('hidden');
-
     });
 
     // MOSTRA TELA
-    const view = document.getElementById('view-' + v);
+    const view = document.getElementById(
+        'view-' + v
+    );
 
     if (view) {
-
         view.classList.remove('hidden');
-
     }
 
     // REMOVE ACTIVE
     document.querySelectorAll('.nav-item')
         .forEach(i => {
-
             i.classList.remove('active');
-
         });
 
-    // ATIVA MENU
-    const nav = document.getElementById('nav-' + v);
+    // ATIVA NAV
+    const nav = document.getElementById(
+        'nav-' + v
+    );
 
     if (nav) {
-
         nav.classList.add('active');
-
     }
 
-    // =====================
+    // ===============================
     // RONDAS
-    // =====================
+    // ===============================
 
     if (v === 'rondas') {
 
-        const placa = document.getElementById('r-placa');
+        const placa = document.getElementById(
+            'r-placa'
+        );
 
         if (placa) {
 
@@ -193,114 +203,54 @@ function showView(v) {
         }
 
         if (typeof atualizarSelectPostos === "function") {
-
             atualizarSelectPostos();
-
         }
 
         if (typeof renderRondas === "function") {
-
             renderRondas();
-
         }
 
     }
 
-    // =====================
+    // ===============================
     // PERFIL
-    // =====================
+    // ===============================
 
     if (v === 'perfil') {
 
         if (typeof preencherCamposPerfil === "function") {
-
             preencherCamposPerfil();
-
         }
 
     }
 
-    // =====================
+    // ===============================
     // POSTOS
-    // =====================
+    // ===============================
 
     if (v === 'postos') {
 
-        console.log("POSTOS ABERTO");
-
-        if (typeof renderPostos === "function") {
-
-            renderPostos();
-
-        }
-
-    }
-
-}
-
-window.showView = showView;
-
-
-// ===============================
-// GERENCIAR INTERVALO
-// ===============================
-
-function gerenciarIntervalo() {
-
-    const btn =
-        document.getElementById('btn-intervalo');
-
-    if (!window.db.intervaloAtivo) {
-
-        window.db.intervaloAtivo =
-            new Date().toLocaleTimeString(
-                'pt-BR',
-                {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }
-            );
-
-        if (btn) {
-
-            btn.innerText =
-                "🏁 FINALIZAR INTERVALO (" +
-                window.db.intervaloAtivo +
-                ")";
-
-            btn.classList.replace(
-                'btn-info',
-                'btn-danger'
-            );
-
-        }
-
-    } else {
-
-        alert(
-            "Intervalo iniciado às " +
-            window.db.intervaloAtivo +
-            " finalizado agora."
+        console.log(
+            "POSTOS ABERTO"
         );
 
-        window.db.intervaloAtivo = null;
-
-        if (btn) {
-
-            btn.innerText =
-                "☕ INICIAR INTERVALO";
-
-            btn.classList.replace(
-                'btn-danger',
-                'btn-info'
-            );
-
+        if (typeof renderPostos === "function") {
+            renderPostos();
         }
 
     }
 
-    saveLocal();
-
 }
 
-window.gerenciarIntervalo = gerenciarIntervalo;
+
+// ===============================
+// VERIFICAR ADM
+// ===============================
+
+function usuarioEhAdm() {
+
+    return (
+        window.db?.perfil?.adm === true
+    );
+
+}
