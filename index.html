@@ -200,8 +200,19 @@ function logout() { auth.signOut(); }
 function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
 
 async function carregarDadosSincronizados(uid) {
-    const docP = await fs.collection("usuarios").doc(uid).get();
-    if (docP.exists) db.perfil = docP.data();
+    const docRef = fs.collection("usuarios").doc(uid);
+    const docP = await docRef.get();
+    
+    if (docP.exists) {
+        db.perfil = docP.data();
+    } else {
+        const perfilPadrao = {
+            nome: "", matricula: "", cargo: "", placa: "", empresa: "", cnpj: "",
+            role: "user"
+        };
+        await docRef.set(perfilPadrao);
+        db.perfil = perfilPadrao;
+    }
 
     const snapPostos = await fs.collection("postos").where("uid", "==", uid).get();
     db.postos = snapPostos.docs.map(d => ({ id: d.id, ...d.data() }));
