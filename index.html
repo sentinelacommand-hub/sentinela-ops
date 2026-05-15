@@ -3,316 +3,537 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campo - Sentinela Ops</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENTINELA OPS - CLOUD V2</title>
     
     <!-- Bibliotecas Externas -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
-            --primary: #2c3e50;
-            --success: #27ae60;
-            --danger: #e74c3c;
-            --bg: #f4f7f6;
+            --primary: #0a192f; --accent: #ffd600; --danger: #f85149;
+            --success: #238636; --bg: #0f1c2e; --card: #16233a;
+            --text: #e0e7ff; --text-light: #a3bffa;
         }
-
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
-        
-        /* Login */
-        #secao-login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; box-sizing: border-box; }
-        .login-box { background: white; padding: 30px; border-radius: 12px; shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
-        
-        /* App Layout */
-        #secao-app { display: none; padding: 15px; }
-        header { background: var(--primary); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        
-        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        input, select, textarea { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        
-        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-success { background: var(--success); color: white; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 75px; line-height: 1.4; }
+        .header { background: var(--primary); color: white; padding: 14px 16px; border-bottom: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; font-weight: bold; }
+        .header h1 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1.5px; }
+        .container { padding: 12px; max-width: 640px; margin: 0 auto; }
+        .card { background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+        .card h3 { margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 3px solid var(--accent); color: var(--accent); font-size: 0.98rem; text-transform: uppercase; font-weight: 700; }
+        label { display: block; font-size: 0.76rem; font-weight: 600; color: #94a3b8; margin: 14px 0 5px 0; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 13px 14px; background: #1e2a44; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 1rem; }
+        .btn { width: 100%; padding: 16px; margin-top: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.96rem; text-transform: uppercase; cursor: pointer; }
+        .btn-primary { background: var(--accent); color: #0a192f; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-admin { background: #2563eb; color: white; display: none; } /* Escondido por padrão */
-        
-        .ronda-item { border-left: 4px solid var(--success); padding: 10px; margin-bottom: 10px; background: #f9f9f9; font-size: 14px; }
-        #sec-fiscalizacao { display: none; background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
+        .btn-info { background: #2563eb; color: white; }
+        .posto-item { background: #1e2a44; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+        .btn-small { padding: 6px 10px; border-radius: 4px; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; margin-left: 5px; color: white; text-transform: uppercase; }
+        .ronda-entry { background: #1e2a44; padding: 13px; border-radius: 6px; margin-bottom: 9px; border-left: 5px solid var(--accent); font-size: 0.87rem; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); display: flex; border-top: 4px solid var(--accent); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; padding: 10px 6px; color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .hidden { display: none !important; }
+        .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+        .check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px; border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; }
+        .check-item.ok { border-color: var(--success); color: var(--success); background: rgba(35, 134, 54, 0.2); }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
-    <div id="secao-login">
-        <div class="login-box">
-            <h2>Sentinela Ops</h2>
-            <p>Operacional de Campo</p>
-            <input type="email" id="email" placeholder="E-mail">
-            <input type="password" id="senha" placeholder="Senha">
-            <button class="btn-success" onclick="fazerLogin()">Entrar</button>
-            <p id="erro-login" style="color:red; font-size:12px;"></p>
-        </div>
+<div id="view-login" class="container">
+    <div style="text-align: center; padding: 50px 0;">
+        <h1 style="color: var(--accent); letter-spacing: 3px; margin:0;">SENTINELA OPS</h1>
+        <p style="color: #94a3b8; font-size: 0.8rem;">SISTEMA OPERACIONAL EM NUVEM</p>
+    </div>
+    <div class="card">
+        <h3>ACESSO RESTRITO</h3>
+        <label>Email Operacional</label>
+        <input type="email" id="login-email" placeholder="seu@email.com">
+        <label>Senha</label>
+        <input type="password" id="login-senha" placeholder="******">
+        <button class="btn btn-primary" onclick="login()">ENTRAR</button>
+        <button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
+    </div>
+</div>
+
+<div id="app-content" class="hidden">
+    <div class="header">
+        <h1>SENTINELA OPS</h1>
+        <div onclick="logout()" style="cursor:pointer; font-size: 1.2rem;">🚪</div>
     </div>
 
-    <!-- TELA PRINCIPAL DO APP -->
-    <div id="secao-app">
-        <header>
-            <span>Olá, <b id="nome-usuario">...</b></span>
-            <button onclick="fazerLogout()" style="width:auto; margin:0; padding:5px 10px; font-size:12px;" class="btn-danger">Sair</button>
-        </header>
+    <div id="view-home" class="container">
+        <div class="card" onclick="showView('rondas')" style="cursor:pointer; border-left: 5px solid var(--accent);">📍 <b>REGISTRO DE RONDAS</b></div>
+        <div class="card" onclick="showView('postos')" style="cursor:pointer; border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
+        <div class="card" onclick="gerarRelatorioPlantao()" style="cursor:pointer; border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
+        <div class="card" onclick="showView('perfil')" style="cursor:pointer; border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
+    </div>
 
-        <!-- Botão exclusivo para Admin -->
-        <button id="btn-add-posto" class="btn-admin" onclick="alert('Abrir tela de cadastro de posto...')">➕ Cadastrar Novo Posto</button>
-
-        <!-- Formulário de Ronda -->
+    <div id="view-rondas" class="container hidden">
         <div class="card">
-            <h3>Registrar Visita</h3>
-            <select id="r-posto" onchange="atualizarSelectPostos()"><option value="">Carregando postos...</option></select>
-            <input type="number" id="r-km" placeholder="KM Atual">
-            <select id="r-motivo" onchange="toggleFiscalizacao()">
-                <option value="Ronda">Ronda</option>
-                <option value="Fiscalização">Fiscalização</option>
-                <option value="Apoio">Apoio</option>
-            </select>
-
-            <div id="sec-fiscalizacao">
-                <label><input type="checkbox" onclick="toggleCheck(this)"> Postura/Uniforme OK</label><br>
-                <label><input type="checkbox" onclick="toggleCheck(this)"> Livro de Atas OK</label>
+            <h3>NOVA ATIVIDADE</h3>
+            <button id="btn-intervalo" class="btn btn-info" onclick="gerenciarIntervalo()">☕ INICIAR INTERVALO</button>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
+                <div><label>VTR</label><input type="text" id="r-placa" readonly></div>
+                <div><label>KM</label><input type="number" id="r-km"></div>
             </div>
-
-            <input type="text" id="r-func" placeholder="Funcionário no Posto">
-            <textarea id="r-obs" placeholder="Observações..."></textarea>
-            
-            <label style="font-size:12px;">Foto da Visita:</label>
-            <input type="file" id="r-foto" accept="image/*" capture="camera" onchange="previewImage(this)">
-            
-            <button class="btn-success" onclick="salvarRonda()">Finalizar Visita</button>
+            <label>Posto / Local</label>
+            <select id="r-posto"></select>
+            <label>Colaborador no Local</label>
+            <input type="text" id="r-func" placeholder="Nome do colaborador">
+            <label>Missão</label>
+            <select id="r-motivo" onchange="toggleFiscalizacao()">
+                <option value="Fiscalização">Fiscalização</option>
+                <option value="De base">De base</option>
+                <option value="Complemento">Complemento</option>
+                <option value="Cobertura">Cobertura</option>
+                <option value="Apoio">Apoio</option>
+                <option value="Deslocamento">Deslocamento</option>
+                <option value="Outros">Outros</option>
+            </select>
+            <div id="sec-fiscalizacao">
+                <label>CHECKLIST TÁTICO</label>
+                <div class="checklist-grid" id="checklist">
+                    <div class="check-item ok" onclick="toggleCheck(this)">APRESENTAÇÃO</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">UNIFORME</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">POSTURA</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">LIVRO OCO.</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">MATERIAL</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">OUTROS</div>
+                </div>
+            </div>
+            <label>Observações</label>
+            <textarea id="r-obs" rows="3" placeholder="Algo fora do normal?"></textarea>
+            <label>Foto de Comprovação</label>
+            <input type="file" id="r-foto" accept="image/*" capture="environment" onchange="previewImage(this)">
+            <button class="btn btn-primary" onclick="salvarRonda()">✅ FINALIZAR E GERAR CARD</button>
         </div>
-
-        <!-- Perfil e Relatório -->
         <div class="card">
-            <h3>Meu Perfil</h3>
-            <input type="text" id="p-nome" placeholder="Nome Completo">
-            <input type="text" id="p-matrícula" placeholder="Matrícula">
-            <input type="text" id="p-cargo" placeholder="Cargo">
-            <input type="text" id="p-placa" placeholder="Placa do Veículo">
-            <input type="text" id="p-empresa" placeholder="Empresa">
-            <input type="text" id="p-cnpj" placeholder="CNPJ">
-            <button class="btn-success" onclick="salvarPerfil()">Salvar Perfil</button>
+            <h3>LOG DE ATIVIDADES (HOJE)</h3>
+            <div id="historico-rondas"></div>
         </div>
-
-        <button class="btn-success" style="background:#6c757d" onclick="gerarRelatorioPlantao()">📄 Gerar PDF do Plantão</button>
-        <button class="btn-danger" onclick="zerarNovoPlantao()">🔄 Iniciar Novo Plantão (Zerar)</button>
-
-        <div id="lista-rondas-recente"></div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
-            authDomain: "sentinela-ops-profissional.firebaseapp.com",
-            projectId: "sentinela-ops-profissional",
-            storageBucket: "sentinela-ops-profissional.firebasestorage.app",
-            messagingSenderId: "458111218365",
-            appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
+    <div id="view-postos" class="container hidden">
+        <div class="card">
+            <h3>GERENCIAR POSTOS</h3>
+            <button class="btn btn-primary" onclick="adicionarPosto()">➕ NOVO POSTO</button>
+            <button class="btn btn-danger" onclick="zerarRondasPlantao()">🧹 ZERAR RONDAS / INICIAR NOVO PLANTÃO</button>
+            <input type="text" id="busca-posto" placeholder="Filtrar postos..." onkeyup="renderPostos()" style="margin-top:15px;">
+            <div id="lista-postos" style="margin-top:15px;"></div>
+        </div>
+    </div>
+
+    <div id="view-perfil" class="container hidden">
+        <div class="card">
+            <h3>DADOS DO OPERADOR</h3>
+            <label>Nome Completo</label><input type="text" id="p-nome">
+            <label>Matrícula</label><input type="text" id="p-matrícula">
+            <label>Cargo</label><input type="text" id="p-cargo">
+            <label>Viatura (Placa)</label><input type="text" id="p-placa">
+            <label>Empresa</label><input type="text" id="p-empresa">
+            <label>CNPJ</label><input type="text" id="p-cnpj">
+            <button class="btn btn-primary" onclick="salvarPerfil()">SALVAR NO CLOUD</button>
+        </div>
+    </div>
+
+    <nav class="nav-bar">
+        <div class="nav-item active" id="nav-home" onclick="showView('home')">🏠 HOME</div>
+        <div class="nav-item" id="nav-rondas" onclick="showView('rondas')">📍 RONDAS</div>
+        <div class="nav-item" id="nav-postos" onclick="showView('postos')">📋 POSTOS</div>
+        <div class="nav-item" id="nav-perfil" onclick="showView('perfil')">👤 PERFIL</div>
+    </nav>
+</div>
+
+<script>
+// --- CONFIG FIREBASE ---
+const firebaseConfig = {
+    apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
+    authDomain: "sentinela-ops-profissional.firebaseapp.com",
+    projectId: "sentinela-ops-profissional",
+    storageBucket: "sentinela-ops-profissional.firebasestorage.app",
+    messagingSenderId: "458111218365",
+    appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const fs = firebase.firestore();
+
+let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
+let fotoBase64 = "";
+
+// --- SISTEMA DE PERMISSÃO ---
+function isAdmin() {
+    return db.perfil && db.perfil.role === "admin";
+}
+
+// Lógica de Autenticação - Corrigida para não deslogar usuários comuns
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        carregarDadosSincronizados(user.uid);
+    } else {
+        document.getElementById('view-login').classList.remove('hidden');
+        document.getElementById('app-content').classList.add('hidden');
+    }
+});
+
+function login() {
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+    if(!e || !s) return alert("Preencha os campos!");
+    auth.signInWithEmailAndPassword(e, s).catch(err => alert("Erro: " + err.message));
+}
+
+function cadastrar() {
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+    auth.createUserWithEmailAndPassword(e, s).then(() => alert("Conta criada!")).catch(err => alert(err.message));
+}
+
+function logout() { auth.signOut(); }
+
+function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
+
+async function carregarDadosSincronizados(uid) {
+    try {
+        const docRef = fs.collection("usuarios").doc(uid);
+        const docP = await docRef.get();
+        
+        if (docP.exists) {
+            db.perfil = docP.data();
+        } else {
+            // Se o usuário não tiver perfil, cria um perfil padrão de usuário comum
+            const perfilPadrao = {
+                nome: "", matricula: "", cargo: "", placa: "", empresa: "", cnpj: "",
+                role: "user"
+            };
+            await docRef.set(perfilPadrao);
+            db.perfil = perfilPadrao;
+        }
+
+        // Carrega postos e rondas vinculados ao usuário
+        const snapPostos = await fs.collection("postos").where("uid", "==", uid).get();
+        db.postos = snapPostos.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        const snapRondas = await fs.collection("rondas").where("uid", "==", uid).orderBy("timestamp", "desc").limit(30).get();
+        db.rondas = snapRondas.docs.map(d => d.data());
+
+        saveLocal();
+        showView('home');
+    } catch (error) {
+        console.error("Erro ao sincronizar dados:", error);
+    }
+}
+
+function showView(v) {
+    document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+    document.getElementById('view-' + v).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('nav-' + v).classList.add('active');
+
+    if (v === 'rondas') {
+        document.getElementById('r-placa').value = db.perfil.placa || "N/A";
+        atualizarSelectPostos();
+        renderRondas();
+    }
+    if (v === 'perfil') preencherCamposPerfil();
+    if (v === 'postos') renderPostos();
+}
+
+async function salvarRonda() {
+    const posto = document.getElementById('r-posto').value;
+    if(!posto) return alert("Selecione um posto!");
+
+    const checklist = {};
+    document.querySelectorAll('#checklist .check-item').forEach(i => {
+        checklist[i.innerText] = i.classList.contains('ok') ? 'OK' : 'PENDENTE';
+    });
+
+    const novaRonda = {
+        id: Date.now(),
+        uid: auth.currentUser.uid,
+        posto: posto,
+        motivo: document.getElementById('r-motivo').value,
+        km: document.getElementById('r-km').value || '0',
+        data: new Date().toLocaleDateString('pt-BR'),
+        hora: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
+        colaborador: document.getElementById('r-func').value || "N/A",
+        obs: document.getElementById('r-obs').value || "Sem alterações",
+        checklist: checklist,
+        foto: fotoBase64,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await fs.collection("rondas").add(novaRonda);
+        db.rondas.unshift(novaRonda);
+        saveLocal();
+        renderRondas();
+        gerarCardIndividual(novaRonda);
+        limparFormRonda();
+        alert("✅ Ronda registrada e Card gerado!");
+    } catch(e) {
+        alert("Erro ao sincronizar. Salvo localmente.");
+    }
+}
+
+function renderRondas() {
+    const container = document.getElementById('historico-rondas');
+    container.innerHTML = db.rondas.map((r) => `
+        <div class="ronda-entry">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong>${r.hora}</strong> - ${r.posto}<br>
+                    <small>${r.motivo} | KM: ${r.km}</small>
+                </div>
+                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
+
+function gerarCardIndividual(r) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
+    let y = 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
+    y += 7;
+    if (r.foto) { try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; } }
+    doc.setFontSize(11);
+    doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
+    y += 7;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
+    y += 5;
+    doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
+    y += 5;
+    doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("STATUS OPERACIONAL:", 5, y);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    Object.entries(r.checklist || {}).forEach(([item, status]) => {
+        y += 4;
+        doc.text(`• ${item}: ${status}`, 8, y);
+    });
+    y += 8;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("OBSERVAÇÕES:", 5, y);
+    doc.setFont("helvetica", "normal");
+    const obs = doc.splitTextToSize(r.obs, 70);
+    doc.text(obs, 5, y + 5);
+    y += (obs.length * 5) + 15;
+    doc.setFont("helvetica", "bold");
+    doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
+    doc.save(`Card_${r.posto}_${r.hora.replace(':','-')}.pdf`);
+}
+
+async function adicionarPosto() {
+    if (!isAdmin()) return alert("Acesso negado: apenas administradores podem gerenciar postos.");
+    const nome = prompt("Nome do Posto:");
+    if(!nome) return;
+    const endereco = prompt("Endereço:");
+    const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
+    const docRef = await fs.collection("postos").add(novoPosto);
+    db.postos.push({ id: docRef.id, ...novoPosto });
+    saveLocal();
+    renderPostos();
+}
+
+function renderPostos() {
+    const busca = document.getElementById('busca-posto').value.toUpperCase();
+    const container = document.getElementById('lista-postos');
+    const btnNovoPosto = document.querySelector('button[onclick="adicionarPosto()"]');
+    
+    if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
+
+    const filtrados = db.postos.filter(p => p.nome.includes(busca));
+    container.innerHTML = filtrados.map((p, i) => `
+        <div class="posto-item">
+            <div style="flex:1;">
+                <b>${p.nome}</b><br><small>${p.endereco}</small>
+            </div>
+            <div style="display:flex;">
+                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
+                ${isAdmin() ? `
+                    <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
+                    <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
+                ` : ""}
+            </div>
+        </div>
+    `).join('');
+}
+
+async function editarPosto(id, index) {
+    if (!isAdmin()) return alert("Acesso negado.");
+    const posto = db.postos[index];
+    const novoNome = prompt("Editar nome do Posto:", posto.nome);
+    const novoEndereco = prompt("Editar endereço:", posto.endereco);
+    if (novoNome) {
+        const dadosAtualizados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
+        if(id) await fs.collection("postos").doc(id).update(dadosAtualizados);
+        db.postos[index] = { ...posto, ...dadosAtualizados };
+        saveLocal();
+        renderPostos();
+    }
+}
+
+async function excluirPosto(id, index) {
+    if (!isAdmin()) return alert("Acesso negado.");
+    if(!confirm("Excluir posto?")) return;
+    if(id) await fs.collection("postos").doc(id).delete();
+    db.postos.splice(index, 1);
+    saveLocal();
+    renderPostos();
+}
+
+async function zerarRondasPlantao() {
+    if (!auth.currentUser) return alert("Usuário não autenticado.");
+    const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá apagar todas as rondas registradas do usuário logado para iniciar um novo plantão.\n\nDeseja continuar?");
+    if (!confirmar) return;
+    try {
+        await excluirRondasFirebaseUsuario(auth.currentUser.uid);
+        limparDadosLocaisRondas();
+        renderRondas();
+        alert("✅ Rondas zeradas com sucesso! Novo plantão iniciado.");
+    } catch (e) { alert("Erro ao zerar rondas: " + e.message); }
+}
+
+async function excluirRondasFirebaseUsuario(uid) {
+    while (true) {
+        const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
+        if (snap.empty) break;
+        const batch = fs.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        if (snap.size < 450) break;
+    }
+}
+
+function limparDadosLocaisRondas() {
+    db.rondas = [];
+    saveLocal();
+}
+
+async function salvarPerfil() {
+    const p = {
+        nome: document.getElementById('p-nome').value,
+        matricula: document.getElementById('p-matrícula').value,
+        cargo: document.getElementById('p-cargo').value,
+        placa: document.getElementById('p-placa').value.toUpperCase(),
+        empresa: document.getElementById('p-empresa').value,
+        cnpj: document.getElementById('p-cnpj').value
+    };
+    db.perfil = { ...db.perfil, ...p };
+    saveLocal();
+    await fs.collection("usuarios").doc(auth.currentUser.uid).update(p);
+    alert("✅ Perfil salvo!");
+}
+
+function preencherCamposPerfil() {
+    const p = db.perfil;
+    document.getElementById('p-nome').value = p.nome || "";
+    document.getElementById('p-matrícula').value = p.matricula || "";
+    document.getElementById('p-cargo').value = p.cargo || "";
+    document.getElementById('p-placa').value = p.placa || "";
+    document.getElementById('p-empresa').value = p.empresa || "";
+    document.getElementById('p-cnpj').value = p.cnpj || "";
+}
+
+function atualizarSelectPostos() {
+    const sel = document.getElementById('r-posto');
+    sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
+}
+
+function toggleCheck(el) { el.classList.toggle('ok'); }
+function toggleFiscalizacao() {
+    const m = document.getElementById('r-motivo').value;
+    document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const maxWidth = 800;
+                const scale = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            };
         };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const fs = firebase.firestore();
+function limparFormRonda() {
+    document.getElementById('r-km').value = "";
+    document.getElementById('r-obs').value = "";
+    document.getElementById('r-func').value = "";
+    fotoBase64 = "";
+    document.getElementById('r-foto').value = "";
+}
 
-        const usuariosAutorizados = ['admin@sentinela.com', 'gerencia@sentinela.com'];
-        let db = { perfil: {}, rondas: [], postos: [] };
-        let fotoBase64 = "";
-
-        // --- AUTENTICAÇÃO (ATUALIZADO) ---
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                let eAdmin = false;
-                try {
-                    const docUser = await fs.collection("usuarios").doc(user.uid).get();
-                    if (docUser.exists) {
-                        db.perfil = docUser.data();
-                        if (db.perfil.role === "admin") eAdmin = true;
-                        preencherCamposPerfil();
-                    }
-                } catch (err) { console.log("Erro permissão:", err); }
-
-                // Mostra botão de admin se for autorizado (Não expulsa mais usuários comuns!)
-                if (usuariosAutorizados.includes(user.email) || eAdmin) {
-                    document.getElementById('btn-add-posto').style.display = 'block';
-                }
-
-                document.getElementById('secao-login').style.display = 'none';
-                document.getElementById('secao-app').style.display = 'block';
-                document.getElementById('nome-usuario').innerText = user.displayName || user.email;
-                
-                carregarPostos();
-            } else {
-                document.getElementById('secao-login').style.display = 'flex';
-                document.getElementById('secao-app').style.display = 'none';
-            }
-        });
-
-        function fazerLogin() {
-            auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('senha').value)
-                .catch(e => document.getElementById('erro-login').innerText = "Erro ao entrar.");
-        }
-
-        function fazerLogout() { auth.signOut(); }
-
-        // --- POSTOS ---
-        async function carregarPostos() {
-            const snap = await fs.collection('postos').get();
-            db.postos = snap.docs.map(doc => doc.data());
-            atualizarSelectPostos();
-        }
-
-        function atualizarSelectPostos() {
-            const sel = document.getElementById('r-posto');
-            sel.innerHTML = '<option value="">Selecione o posto...</option>';
-            db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
-        }
-
-        // --- RONDAS ---
-        async function salvarRonda() {
-            const r = {
-                uid: auth.currentUser.uid,
-                colaborador: db.perfil.nome || auth.currentUser.email,
-                posto: document.getElementById('r-posto').value,
-                km: document.getElementById('r-km').value,
-                motivo: document.getElementById('r-motivo').value,
-                obs: document.getElementById('r-obs').value,
-                funcionarioPosto: document.getElementById('r-func').value,
-                data: new Date().toISOString().split('T')[0],
-                hora: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            await fs.collection('rondas').add(r);
-            db.rondas.push(r);
-            alert("✅ Visita registrada!");
-            limparFormRonda();
-            saveLocal();
-        }
-
-        async function zerarNovoPlantao() {
-            const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá apagar todas as rondas registradas do usuário logado para iniciar um novo plantão.\n\nDeseja continuar?");
-            if (!confirmar) return;
-            try {
-                await excluirRondasFirebaseUsuario(auth.currentUser.uid);
-                db.rondas = [];
-                saveLocal();
-                alert("✅ Rondas zeradas com sucesso!");
-            } catch (e) { alert("Erro ao zerar: " + e.message); }
-        }
-
-        async function excluirRondasFirebaseUsuario(uid) {
-            const snap = await fs.collection("rondas").where("uid", "==", uid).get();
-            const batch = fs.batch();
-            snap.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-        }
-
-        // --- PERFIL ---
-        async function salvarPerfil() {
-            const p = {
-                nome: document.getElementById('p-nome').value,
-                matricula: document.getElementById('p-matrícula').value,
-                cargo: document.getElementById('p-cargo').value,
-                placa: document.getElementById('p-placa').value.toUpperCase(),
-                empresa: document.getElementById('p-empresa').value,
-                cnpj: document.getElementById('p-cnpj').value
-            };
-            await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, {merge: true});
-            db.perfil = p;
-            alert("✅ Perfil salvo!");
-        }
-
-        function preencherCamposPerfil() {
-            const p = db.perfil;
-            document.getElementById('p-nome').value = p.nome || "";
-            document.getElementById('p-matrícula').value = p.matricula || "";
-            document.getElementById('p-cargo').value = p.cargo || "";
-            document.getElementById('p-placa').value = p.placa || "";
-            document.getElementById('p-empresa').value = p.empresa || "";
-            document.getElementById('p-cnpj').value = p.cnpj || "";
-        }
-
-        // --- AUXILIARES ---
-        function toggleCheck(el) { el.classList.toggle('ok'); }
-        function toggleFiscalizacao() {
-            const m = document.getElementById('r-motivo').value;
-            document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
-        }
-
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = function () {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const maxWidth = 800;
-                        const scale = maxWidth / img.width;
-                        canvas.width = maxWidth;
-                        canvas.height = img.height * scale;
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                    };
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function limparFormRonda() {
-            document.getElementById('r-km').value = "";
-            document.getElementById('r-obs').value = "";
-            document.getElementById('r-func').value = "";
-            fotoBase64 = "";
-            document.getElementById('r-foto').value = "";
-        }
-
-        function saveLocal() { localStorage.setItem('sentinela_db', JSON.stringify(db)); }
-
-        function gerarRelatorioPlantao() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const p = db.perfil;
-            let y = 20;
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(16);
-            doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
-            y += 15;
-            doc.setFontSize(10);
-            doc.text("DADOS DO OPERADOR", 10, y);
-            y += 6;
-            doc.setFont("helvetica", "normal");
-            doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
-            doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
-            y += 5;
-            doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
-            doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
-            y += 10;
-            doc.setLineWidth(0.5); doc.line(10, y, 200, y); y += 10;
-            doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
-            db.rondas.forEach((r, index) => {
-                if(y > 260) { doc.addPage(); y = 20; }
-                doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-                doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
-                y += 5; doc.setFont("helvetica", "normal");
-                doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
-                y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
-                y += 5; const obs = doc.splitTextToSize(`Obs: ${r.obs}`, 180); doc.text(obs, 15, y);
-                y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
-            });
-            doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
-        }
-    </script>
+function gerarRelatorioPlantao() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const p = db.perfil;
+    let y = 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
+    y += 15;
+    doc.setFontSize(10);
+    doc.text("DADOS DO OPERADOR", 10, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
+    doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
+    y += 5;
+    doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
+    doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
+    y += 10;
+    doc.setLineWidth(0.5); doc.line(10, y, 200, y); y += 10;
+    doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
+    db.rondas.forEach((r, index) => {
+        if(y > 260) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+        doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
+        y += 5; doc.setFont("helvetica", "normal");
+        doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
+        y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
+        y += 5; const obs = doc.splitTextToSize(r.obs, 180); doc.text(obs, 15, y);
+        y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
+    });
+    doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+}
+</script>
 </body>
 </html>
 
+```
