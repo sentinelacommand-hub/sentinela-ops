@@ -202,36 +202,7 @@ function logout() { auth.signOut(); }
 
 function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
 
-async function carregarDadosSincronizados(uid) {
-    try {
-        const docRef = fs.collection("usuarios").doc(uid);
-        const docP = await docRef.get();
-        
-        if (docP.exists) {
-            db.perfil = docP.data();
-        } else {
-            // Se o usuário não tiver perfil, cria um perfil padrão de usuário comum
-            const perfilPadrao = {
-                nome: "", matricula: "", cargo: "", placa: "", empresa: "", cnpj: "",
-                role: "user"
-            };
-            await docRef.set(perfilPadrao);
-            db.perfil = perfilPadrao;
-        }
 
-        // Carrega postos e rondas vinculados ao usuário
-        const snapPostos = await fs.collection("postos").where("uid", "==", uid).get();
-        db.postos = snapPostos.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        const snapRondas = await fs.collection("rondas").where("uid", "==", uid).orderBy("timestamp", "desc").limit(30).get();
-        db.rondas = snapRondas.docs.map(d => d.data());
-
-        saveLocal();
-        showView('home');
-    } catch (error) {
-        console.error("Erro ao sincronizar dados:", error);
-    }
-}
 
 function showView(v) {
     document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
