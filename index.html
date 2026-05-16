@@ -141,11 +141,66 @@
             <button class="btn btn-primary" onclick="salvarPerfil()">SALVAR NO CLOUD</button>
         </div>
     </div>
+<!-- NOVA VIEW: PAINEL ADMINISTRATIVO -->
+<div id="view-admin" class="container hidden">
+    <div class="card">
+        <h3>LANÇAMENTO RETROATIVO / GESTÃO</h3>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px;">Lance rondas em nome de qualquer operador. O sistema processará como uma atividade real.</p>
+        
+        <label>1. SELECIONE O OPERADOR *</label>
+        <select id="adm-usuario" onchange="atualizarVtrAdmin()"></select>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div>
+                <label>VTR (Placa)</label>
+                <input type="text" id="adm-placa" readonly style="opacity: 0.7;">
+            </div>
+            <div>
+                <label>KM Atual</label>
+                <input type="number" id="adm-km">
+            </div>
+        </div>
+
+        <label>2. POSTO / LOCAL *</label>
+        <select id="adm-posto"></select>
+
+        <label>Colaborador no Local</label>
+        <input type="text" id="adm-func" placeholder="Nome do colaborador">
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div>
+                <label>Data da Ronda</label>
+                <input type="date" id="adm-data">
+            </div>
+            <div>
+                <label>Hora da Ronda</label>
+                <input type="time" id="adm-hora">
+            </div>
+        </div>
+
+        <label>Missão</label>
+        <select id="adm-motivo">
+            <option value="Fiscalização">Fiscalização</option>
+            <option value="De base">De base</option>
+            <option value="Complemento">Complemento</option>
+            <option value="Cobertura">Cobertura</option>
+            <option value="Apoio">Apoio</option>
+            <option value="Deslocamento">Deslocamento</option>
+            <option value="Outros">Outros</option>
+        </select>
+
+        <label>Observações</label>
+        <textarea id="adm-obs" rows="3" placeholder="Observações do lançamento administrativo..."></textarea>
+
+        <button class="btn btn-primary" onclick="salvarRondaComoAdmin()" style="background: #2563eb; color: white;">⚡ LANÇAR RONDA OFICIAL</button>
+    </div>
+</div>
 
     <nav class="nav-bar">
         <div class="nav-item active" id="nav-home" onclick="showView('home')">🏠 HOME</div>
         <div class="nav-item" id="nav-rondas" onclick="showView('rondas')">📍 RONDAS</div>
         <div class="nav-item" id="nav-postos" onclick="showView('postos')">📋 POSTOS</div>
+        <div class="nav-item hidden" id="nav-admin" onclick="showView('admin')">⚙️ ADMIN</div>
         <div class="nav-item" id="nav-perfil" onclick="showView('perfil')">👤 PERFIL</div>
     </nav>
 </div>
@@ -167,6 +222,7 @@ const fs = firebase.firestore();
 
 let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
 let fotoBase64 = "";
+let listaUsuariosAdmin = [];
 
 // --- SISTEMA DE PERMISSÃO ---
 function isAdmin() {
@@ -202,13 +258,15 @@ function logout() { auth.signOut(); }
 
 function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
 
-
-
 function showView(v) {
     document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
     document.getElementById('view-' + v).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     document.getElementById('nav-' + v).classList.add('active');
+
+    if (isAdmin()) {
+        document.getElementById('nav-admin').classList.remove('hidden');
+    }
 
     if (v === 'rondas') {
         document.getElementById('r-placa').value = db.perfil.placa || "N/A";
@@ -217,44 +275,21 @@ function showView(v) {
     }
     if (v === 'perfil') preencherCamposPerfil();
     if (v === 'postos') renderPostos();
-}
-
-async function salvarRonda() {
-    const posto = document.getElementById('r-posto').value;
-    if(!posto) return alert("Selecione um posto!");
-
-    const checklist = {};
-    document.querySelectorAll('#checklist .check-item').forEach(i => {
-        checklist[i.innerText] = i.classList.contains('ok') ? 'OK' : 'PENDENTE';
-    });
-
-    const novaRonda = {
-        id: Date.now(),
-        uid: auth.currentUser.uid,
-        posto: posto,
-        motivo: document.getElementById('r-motivo').value,
-        km: document.getElementById('r-km').value || '0',
-        data: new Date().toLocaleDateString('pt-BR'),
-        hora: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
-        colaborador: document.getElementById('r-func').value || "N/A",
-        obs: document.getElementById('r-obs').value || "Sem alterações",
-        checklist: checklist,
-        foto: fotoBase64,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        await fs.collection("rondas").add(novaRonda);
-        db.rondas.unshift(novaRonda);
-        saveLocal();
-        renderRondas();
-        gerarCardIndividual(novaRonda);
-        limparFormRonda();
-        alert("✅ Ronda registrada e Card gerado!");
-    } catch(e) {
-        alert("Erro ao sincronizar. Salvo localmente.");
+    
+    if (v === 'admin') {
+        if (!isAdmin()) {
+            alert("Acesso restrito a Administradores.");
+            showView('home');
+            return;
+        }
+        carregarUsuariosParaAdmin();
+        atualizarSelectPostosAdmin();
+        
+        document.getElementById('adm-data').value = new Date().toISOString().split('T')[0];
+        document.getElementById('adm-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
     }
 }
+
 
 function renderRondas() {
     const container = document.getElementById('historico-rondas');
@@ -502,6 +537,90 @@ function gerarRelatorioPlantao() {
         y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
     });
     doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+}
+
+// ==========================================
+//    FUNÇÕES EXCLUSIVAS DO PAINEL ADMIN
+// ==========================================
+
+async function carregarUsuariosParaAdmin() {
+    try {
+        const snap = await fs.collection("usuarios").get();
+        listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        const sel = document.getElementById('adm-usuario');
+        if(!sel) return;
+        sel.innerHTML = '<option value="">Selecione o Operador...</option>';
+        
+        listaUsuariosAdmin.sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
+        
+        listaUsuariosAdmin.forEach(u => {
+            sel.innerHTML += `<option value="${u.id}">${u.nome} (${u.cargo || 'Operador'})</option>`;
+        });
+    } catch (e) {
+        console.error("Erro ao carregar usuários para o painel:", e);
+    }
+}
+
+function atualizarVtrAdmin() {
+    const uidSelecionado = document.getElementById('adm-usuario').value;
+    const usuario = listaUsuariosAdmin.find(u => u.id === uidSelecionado);
+    const inputPlaca = document.getElementById('adm-placa');
+    if(inputPlaca) {
+        inputPlaca.value = usuario ? (usuario.placa || "SEM VTR") : "";
+    }
+}
+
+function atualizarSelectPostosAdmin() {
+    const sel = document.getElementById('adm-posto');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
+}
+
+async function salvarRondaComoAdmin() {
+    const uidOperador = document.getElementById('adm-usuario').value;
+    const posto = document.getElementById('adm-posto').value;
+    const dataInput = document.getElementById('adm-data').value;
+    const horaInput = document.getElementById('adm-hora').value;
+
+    if(!uidOperador) return alert("Selecione o operador que receberá a ronda!");
+    if(!posto) return alert("Selecione o posto!");
+    if(!dataInput || !horaInput) return alert("Preencha data e hora do evento!");
+
+    const dataFormatada = dataInput.split('-').reverse().join('/');
+
+    const checklistPadrao = {
+        "APRESENTAÇÃO": "OK", "UNIFORME": "OK", "POSTURA": "OK",
+        "LIVRO OCO.": "OK", "MATERIAL": "OK", "OUTROS": "OK"
+    };
+
+    const novaRondaAdmin = {
+        id: Date.now(),
+        uid: uidOperador, 
+        posto: posto,
+        motivo: document.getElementById('adm-motivo').value,
+        km: document.getElementById('adm-km').value || '0',
+        data: dataFormatada,
+        hora: horaInput,
+        colaborador: document.getElementById('adm-func').value || "N/A",
+        obs: document.getElementById('adm-obs').value + " (Lançado via Painel Admin)",
+        checklist: checklistPadrao,
+        foto: "", 
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await fs.collection("rondas").add(novaRondaAdmin);
+        
+        document.getElementById('adm-km').value = "";
+        document.getElementById('adm-func').value = "";
+        document.getElementById('adm-obs').value = "";
+        
+        alert("✅ Ronda inserida com sucesso no perfil do operador!");
+    } catch(e) {
+        alert("Erro técnico ao injetar ronda no banco remoto: " + e.message);
+    }
 }
 </script>
 </body>
