@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -185,6 +184,58 @@ auth.onAuthStateChanged(user => {
     }
 });
 
+// --- NOVO MÉTODO CORRIGIDO E RESILIENTE COM ORDENAÇÃO DE A-Z ---
+async function carregarDadosSincronizados(uid) {
+    try {
+        const docRef = fs.collection("usuarios").doc(uid);
+        const docP = await docRef.get();
+        
+        if (docP.exists) {
+            db.perfil = docP.data();
+        } else {
+            const perfilPadrao = {
+                nome: "Usuário Novo", matricula: "", cargo: "Operador", placa: "", empresa: "", cnpj: "",
+                role: "user"
+            };
+            db.perfil = perfilPadrao;
+            try {
+                await docRef.set(perfilPadrao);
+            } catch (e) {
+                console.warn("Perfil local criado provisoriamente:", e.message);
+            }
+        }
+
+        // Carrega e ordena Postos de A a Z
+        try {
+            const snapPostos = await fs.collection("postos").where("uid", "==", uid).get();
+            const listaPostos = snapPostos.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            db.postos = listaPostos.sort((a, b) => {
+                return (a.nome || "").localeCompare((b.nome || ""), 'pt-BR', { sensitivity: 'base' });
+            });
+        } catch (e) {
+            console.warn("Usando postos locais guardados:", e.message);
+            db.postos = db.postos || [];
+        }
+
+        // Carrega Rondas
+        try {
+            const snapRondas = await fs.collection("rondas").where("uid", "==", uid).orderBy("timestamp", "desc").limit(30).get();
+            db.rondas = snapRondas.docs.map(d => d.data());
+        } catch (e) {
+            console.warn("Usando rondas locais guardadas:", e.message);
+            db.rondas = db.rondas || [];
+        }
+
+        saveLocal();
+        showView('home');
+    } catch (error) {
+        console.error("Erro crítico na sincronização:", error);
+        alert("Erro técnico de acesso.");
+        auth.signOut();
+    }
+}
+
 function login() {
     const e = document.getElementById('login-email').value;
     const s = document.getElementById('login-senha').value;
@@ -322,8 +373,13 @@ async function adicionarPosto() {
     if(!nome) return;
     const endereco = prompt("Endereço:");
     const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
+    
     const docRef = await fs.collection("postos").add(novoPosto);
     db.postos.push({ id: docRef.id, ...novoPosto });
+    
+    // Força reordenação de A a Z após adição rápida local
+    db.postos.sort((a, b) => (a.nome || "").localeCompare((b.nome || ""), 'pt-BR', { sensitivity: 'base' }));
+    
     saveLocal();
     renderPostos();
 }
@@ -335,6 +391,7 @@ function renderPostos() {
     
     if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
 
+    // Filtra e garante que a exibição se mantenha em ordem alfabética
     const filtrados = db.postos.filter(p => p.nome.includes(busca));
     container.innerHTML = filtrados.map((p, i) => `
         <div class="posto-item">
@@ -361,6 +418,10 @@ async function editarPosto(id, index) {
         const dadosAtualizados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
         if(id) await fs.collection("postos").doc(id).update(dadosAtualizados);
         db.postos[index] = { ...posto, ...dadosAtualizados };
+        
+        // Ordena de A-Z após editar o nome do posto
+        db.postos.sort((a, b) => (a.nome || "").localeCompare((b.nome || ""), 'pt-BR', { sensitivity: 'base' }));
+        
         saveLocal();
         renderPostos();
     }
@@ -431,6 +492,9 @@ function preencherCamposPerfil() {
 function atualizarSelectPostos() {
     const sel = document.getElementById('r-posto');
     sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    
+    // Garante que a lista de seleção também estará em ordem alfabética perfeita
+    db.postos.sort((a, b) => (a.nome || "").localeCompare((b.nome || ""), 'pt-BR', { sensitivity: 'base' }));
     db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
 }
 
@@ -505,5 +569,3 @@ function gerarRelatorioPlantao() {
 </script>
 </body>
 </html>
-
-```
