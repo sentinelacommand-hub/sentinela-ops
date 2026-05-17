@@ -329,7 +329,11 @@ async function carregarDadosSincronizados(uid) {
         const postosSnap = await fs.collection("postos").get();
         db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
+        // CORREÇÃO: Puxa apenas as rondas do usuário logado que façam parte do plantão em andamento (ativo == true)
+        const rondasSnap = await fs.collection("rondas")
+                                     .where("uid", "==", uid)
+                                     .where("ativo", "==", true)
+                                     .get();
         db.rondas = rondasSnap.docs.map(doc => doc.data());
 
         saveLocal();
@@ -343,33 +347,17 @@ async function carregarDadosSincronizados(uid) {
 
 function isAdmin() { return db.perfil && db.perfil.role === "admin"; }
 
-auth.onAuthStateChanged(user => {
-    if (user) {
-        document.getElementById('view-login').classList.add('hidden');
-        document.getElementById('app-content').classList.remove('hidden');
-        carregarDadosSincronizados(user.uid);
-    } else {
-        document.getElementById('view-login').classList.remove('hidden');
-        document.getElementById('app-content').classList.add('hidden');
-    }
-});
-
-function login() {
-    const e = document.getElementById('login-email').value;
-    const s = document.getElementById('login-senha').value;
-    if(!e || !s) return alert("Preencha email e senha!");
-    auth.signInWithEmailAndPassword(e, s).catch(err => alert("Erro: " + err.message));
-}
-
-function logout() { auth.signOut(); }
-function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
-
 function showView(v) {
-    document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-    document.getElementById('view-' + v).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-    document.getElementById('nav-' + v).classList.add('active');
-    gerenciarMenuAdmin();
+    document.querySelectorAll('.container').forEach(c => { if(c.id !== 'view-login') c.classList.add('hidden'); });
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    const targetView = document.getElementById('view-' + v);
+    if(targetView) targetView.classList.remove('hidden');
+    
+    const targetNav = document.getElementById('nav-' + v);
+    if(targetNav) targetNav.classList.add('active');
+    
+    if (v === 'home') gerenciarMenuAdmin();
     if (v === 'rondas') {
         document.getElementById('r-placa').value = db.perfil.placa || "N/A";
         atualizarSelectPostos();
@@ -389,7 +377,7 @@ function showView(v) {
 async function salvarRonda() {
     const posto = document.getElementById('r-posto').value;
     if(!posto) return alert("Selecione um posto!");
-
+    
     const novaRonda = {
         id: Date.now(),
         uid: auth.currentUser.uid,
@@ -401,6 +389,7 @@ async function salvarRonda() {
         data: new Date().toLocaleDateString('pt-BR'),
         hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
         foto: fotoBase64,
+        ativo: true, // CORREÇÃO: Tag necessária para identificar as rondas pertencentes ao plantão ativo
         checklist: {
             "APRESENTAÇÃO": document.querySelectorAll('.check-item')[0].classList.contains('ok') ? "OK" : "REPROVADO",
             "UNIFORME": document.querySelectorAll('.check-item')[1].classList.contains('ok') ? "OK" : "REPROVADO",
@@ -410,254 +399,320 @@ async function salvarRonda() {
             "OUTROS": document.querySelectorAll('.check-item')[5].classList.contains('ok') ? "OK" : "REPROVADO"
         }
     };
+    
     try {
-        await fs.collection("rondas").add(novaRonda);
-        db.rondas.unshift(novaRonda);
+        await fs.collection("rondas").doc(novaRonda.id.toString()).set(novaRonda);
+        db.rondas.push(novaRonda);
         saveLocal();
         renderRondas();
-        limparFormRonda();
-        alert("✅ Ronda salva!");
-    } catch(e) { alert("Erro ao salvar: " + e.message); }
+        alert("✅ Ronda salva com sucesso!");
+        gerarCardIndividual(novaRonda);
+    } catch(e) {
+        alert("Erro ao salvar ronda: " + e.message);
+    }
 }
-
-function renderRondas() {
-    const container = document.getElementById('historico-rondas');
-    container.innerHTML = db.rondas.map((r) => `
-        <div class="ronda-entry">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <strong>${r.hora}</strong> - ${r.posto}<br>
-                    <small>${r.motivo} | KM: ${r.km}</small>
-                </div>
-                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
 
 function gerarCardIndividual(r) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
-    let y = 10;
-    doc.setFontSize(10); doc.setFont("helvetica", "bold");
-    doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
-    y += 7;
-    if (r.foto) { try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; } }
-    doc.setFontSize(11); doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
-    y += 7; doc.setFontSize(8); doc.setFont("helvetica", "normal");
-    doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
-    y += 5; doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
-    y += 5; doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
-    y += 8; doc.setFont("helvetica", "bold"); doc.text("STATUS OPERACIONAL:", 5, y);
-    doc.setFontSize(7); doc.setFont("helvetica", "normal");
-    Object.entries(r.checklist || {}).forEach(([item, status]) => { y += 4; doc.text(`• ${item}: ${status}`, 8, y); });
-    y += 8; doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("OBSERVAÇÕES:", 5, y);
-    doc.setFont("helvetica", "normal"); const obs = doc.splitTextToSize(r.obs, 70); doc.text(obs, 5, y + 5);
-    y += (obs.length * 5) + 15; doc.setFont("helvetica", "bold"); doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
-    y += 5; doc.setFont("helvetica", "normal"); doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
-    doc.save(`Card_${r.posto}.pdf`);
+    const doc = new jsPDF({ unit: 'mm', format: [80, 150] });
+    let y = 15;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("SENTINELA OPS - CARD DE RONDA", 5, y);
+    y += 10;
+    doc.setFontSize(8);
+    doc.text(`POSTO: ${r.posto}`, 5, y);
+    y += 6;
+    doc.text(`DATA: ${r.data} | HORA: ${r.hora}`, 5, y);
+    y += 6;
+    doc.text(`KM: ${r.km} | MISSÃO: ${r.motivo}`, 5, y);
+    y += 6;
+    doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y); 
+    y += 8; doc.setFont("helvetica", "bold"); doc.text("STATUS OPERACIONAL:", 5, y); 
+    doc.setFontSize(7); doc.setFont("helvetica", "normal"); 
+    Object.entries(r.checklist || {}).forEach(([item, status]) => { y += 4; doc.text(`• ${item}: ${status}`, 8, y); }); 
+    y += 8; doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("OBSERVAÇÕES:", 5, y); 
+    doc.setFont("helvetica", "normal"); const obs = doc.splitTextToSize(r.obs, 70); doc.text(obs, 5, y + 5); 
+    y += (obs.length * 5) + 15; doc.setFont("helvetica", "bold"); doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y); 
+    y += 5; doc.setFont("helvetica", "normal"); doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y); 
+    doc.save(`Card_${r.posto}.pdf`); 
 }
 
-async function adicionarPosto() {
-    if (!isAdmin()) return;
-    const nome = prompt("Nome do Posto:");
-    if(!nome) return;
-    const endereco = prompt("Endereço:");
-    const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
+async function adicionarPosto() { 
+    if (!isAdmin()) return; 
+    const nome = prompt("Nome do Posto:"); 
+    if(!nome) return; 
+    const endereco = prompt("Endereço:"); 
+    const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid }; 
     const docRef = await fs.collection("postos").add(novoPosto);
-    db.postos.push({ id: docRef.id, ...novoPosto });
-    saveLocal(); renderPostos();
-}
-
-function renderPostos() {
-    const busca = document.getElementById('busca-posto').value.toUpperCase();
-    const container = document.getElementById('lista-postos');
-    const btnNovoPosto = document.getElementById('btn-novo-posto');
-    if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
-    const filtrados = db.postos.filter(p => p.nome.includes(busca));
-    container.innerHTML = filtrados.map((p, i) => `
-        <div class="posto-item">
-            <div style="flex:1;"><b>${p.nome}</b><br><small>${p.endereco}</small></div>
-            <div style="display:flex;">
-                <button onclick="window.open('http://google.com/maps?q=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
-                ${isAdmin() ? `
-                    <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
-                    <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
-                ` : ""}
-            </div>
-        </div>
-    `).join('');
-}
-
-async function editarPosto(id, index) {
-    if (!isAdmin()) return;
-    const posto = db.postos[index];
-    const novoNome = prompt("Editar nome do Posto:", posto.nome);
-    const novoEndereco = prompt("Editar endereço:", posto.endereco);
-    if (novoNome) {
-        const dados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
-        if(id) await fs.collection("postos").doc(id).update(dados);
-        db.postos[index] = { ...posto, ...dados };
-        saveLocal(); renderPostos();
-    }
-}
-
-async function excluirPosto(id, index) {
-    if (!isAdmin()) return;
-    if(!confirm("Excluir posto?")) return;
-    if(id) await fs.collection("postos").doc(id).delete();
-    db.postos.splice(index, 1);
-    saveLocal(); renderPostos();
+    novoPosto.id = docRef.id;
+    db.postos.push(novoPosto);
+    saveLocal();
+    renderPostos();
 }
 
 async function zerarRondasPlantao() {
-    const confirmar = confirm("Deseja apagar todas as rondas do SEU PERFIL?");
+    const confirmar = confirm("Deseja arquivar as rondas do plantão atual para iniciar um novo?");
     if (!confirmar) return;
+    
     try {
         const uid = auth.currentUser.uid;
+        
         while (true) {
-            const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
+            // Busca apenas as rondas do usuário ativo que estão visíveis neste plantão
+            const snap = await fs.collection("rondas")
+                                 .where("uid", "==", uid)
+                                 .where("ativo", "==", true)
+                                 .limit(450)
+                                 .get();
+                                 
             if (snap.empty) break;
+            
             const batch = fs.batch();
-            snap.forEach(doc => batch.delete(doc.ref));
+            
+            // CORREÇÃO: Altera a tag para falso em vez de apagar fisicamente. 
+            // Isso esconde as rondas do Sentinela, mas mantém intactas para o painel de Gerência.
+            snap.forEach(doc => batch.update(doc.ref, { ativo: false }));
+            
             await batch.commit();
         }
-        db.rondas = []; saveLocal(); renderRondas();
-        alert("✅ Rondas zeradas!");
-    } catch (e) { alert("Erro: " + e.message); }
+        
+        db.rondas = []; 
+        saveLocal(); 
+        renderRondas();
+        
+        alert("✅ Rondas limpas! Novo plantão iniciado.");
+    } catch (e) { 
+        alert("Erro ao zerar: " + e.message); 
+    }
 }
 
-async function salvarPerfil() {
-    const p = {
-        nome: document.getElementById('p-nome').value,
-        matricula: document.getElementById('p-matrícula').value,
-        cargo: document.getElementById('p-cargo').value,
-        placa: document.getElementById('p-placa').value.toUpperCase(),
-        empresa: document.getElementById('p-empresa').value,
-        cnpj: document.getElementById('p-cnpj').value
-    };
-    db.perfil = { ...db.perfil, ...p };
-    saveLocal();
-    await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true });
-    alert("✅ Perfil atualizado!");
-}
+async function salvarPerfil() { 
+    const p = { 
+        nome: document.getElementById('p-nome').value, 
+        matricula: document.getElementById('p-matrícula').value, 
+        cargo: document.getElementById('p-cargo').value, 
+        placa: document.getElementById('p-placa').value.toUpperCase(), 
+        empresa: document.getElementById('p-empresa').value, 
+        cnpj: document.getElementById('p-cnpj').value 
+    }; 
+    db.perfil = { ...db.perfil, ...p }; 
+    saveLocal(); 
+    await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true }); 
+    alert("✅ Perfil atualizado!"); 
+} 
 
-function preencherCamposPerfil() {
-    const p = db.perfil;
-    document.getElementById('p-nome').value = p.nome || "";
-    document.getElementById('p-matrícula').value = p.matricula || "";
-    document.getElementById('p-cargo').value = p.cargo || "";
-    document.getElementById('p-placa').value = p.placa || "";
+function preencherCamposPerfil() { 
+    const p = db.perfil; 
+    document.getElementById('p-nome').value = p.nome || ""; 
+    document.getElementById('p-matrícula').value = p.matricula || ""; 
+    document.getElementById('p-cargo').value = p.cargo || ""; 
+    document.getElementById('p-placa').value = p.placa || ""; 
     document.getElementById('p-empresa').value = p.empresa || "";
     document.getElementById('p-cnpj').value = p.cnpj || "";
-}
-
-function atualizarSelectPostos() {
-    const sel = document.getElementById('r-posto');
-    sel.innerHTML = '<option value="">Selecione o posto...</option>';
-    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
-}
-
-function gerenciarIntervalo() {
-    const btn = document.getElementById('btn-intervalo');
-    if (!db.intervaloAtivo) {
-        db.intervaloAtivo = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-        btn.innerText = "☕ EM INTERVALO (CLIQUE P/ VOLTAR)";
-        btn.style.background = "var(--danger)";
-    } else {
-        db.intervaloAtivo = null;
-        btn.innerText = "☕ INICIAR INTERVALO";
-        btn.style.background = "#2563eb";
-    }
-    saveLocal();
-}
-
-function toggleCheck(el) { el.classList.toggle('ok'); }
-function toggleFiscalizacao() {
-    const m = document.getElementById('r-motivo').value;
-    document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
-}
-
-function previewImage(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function () {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = 800; canvas.height = img.height * (800 / img.width);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-            };
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function limparFormRonda() {
-    document.getElementById('r-km').value = ""; document.getElementById('r-obs').value = "";
-    document.getElementById('r-func').value = ""; fotoBase64 = "";
-    document.getElementById('r-foto').value = "";
 }
 
 function gerarRelatorioPlantao() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     let y = 20;
-    doc.setFontSize(16); doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
-    y += 15; doc.setFontSize(10);
-    doc.text(`Operador: ${db.perfil.nome || "N/A"} | Matrícula: ${db.perfil.matricula || "N/A"}`, 10, y);
-    y += 15;
-    db.rondas.forEach((r, i) => {
-        if(y > 270) { doc.addPage(); y = 20; }
-        doc.text(`${i+1}. ${r.data} ${r.hora} - ${r.posto} (${r.motivo})`, 10, y);
-        y += 7;
-    });
-    doc.save(`Relatorio_${new Date().toLocaleDateString('pt-BR')}.pdf`);
-}
+    doc.setFontSize(16);
+    doc.text("RELATÓRIO DE PLANTÃO - SENTINELA OPS", 10, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.text(`Empresa: ${db.perfil.empresa || "N/A"} | CNPJ: ${db.perfil.cnpj || "N/A"}`, 10, y);
+    y += 7;
+    doc.text(`Viatura: ${db.perfil.placa || "N/A"}`, 10, y);
+    y += 15; doc.setFontSize(10); 
+    doc.text(`Operador: ${db.perfil.nome || "N/A"} | Matrícula: ${db.perfil.matricula || "N/A"}`, 10, y); 
+    y += 15; 
+    db.rondas.forEach((r, i) => { 
+        if(y > 270) { doc.addPage(); y = 20; } 
+        doc.text(`${i+1}. ${r.data} ${r.hora} - ${r.posto} (${r.motivo})`, 10, y); 
+        y += 7; 
+    }); 
+    doc.save(`Relatorio_${new Date().toLocaleDateString('pt-BR')}.pdf`); 
+} 
 
-async function carregarUsuariosParaAdmin() {
-    const snap = await fs.collection("usuarios").get();
-    listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const sel = document.getElementById('adm-usuario');
-    sel.innerHTML = '<option value="">Selecione o Operador...</option>';
-    listaUsuariosAdmin.forEach(u => sel.innerHTML += `<option value="${u.id}">${u.nome || u.email}</option>`);
-}
+async function carregarUsuariosParaAdmin() { 
+    const snap = await fs.collection("usuarios").get(); 
+    listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })); 
+    const sel = document.getElementById('adm-usuario'); 
+    sel.innerHTML = '<option value="">Selecione o Operador...</option>'; 
+    listaUsuariosAdmin.forEach(u => sel.innerHTML += `<option value="${u.id}">${u.nome || u.email}</option>`); 
+} 
 
-function atualizarVtrAdmin() {
+function atualizarVtrAdmin() { 
     const uid = document.getElementById('adm-usuario').value;
-    const u = listaUsuariosAdmin.find(x => x.id === uid);
-    document.getElementById('adm-placa').value = u ? (u.placa || "") : "";
+    const u = listaUsuariosAdmin.find(usr => usr.id === uid);
+    if(u) {
+        document.getElementById('adm-placa').value = u.placa || "N/A";
+    }
+}
+
+function saveLocal() {
+    localStorage.setItem('sentinela_ops_db', JSON.stringify(db));
+}
+
+function login() {
+    const email = document.getElementById('login-email').value;
+    const senha = document.getElementById('login-senha').value;
+    if(!email || !senha) return alert("Preencha email e senha!");
+    
+    auth.signInWithEmailAndPassword(email, senha)
+        .then(userCredential => {
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('app-content').classList.remove('hidden');
+            carregarDadosSincronizados(userCredential.user.uid);
+        })
+        .catch(err => alert("Erro ao entrar: " + err.message));
+}
+
+function logout() {
+    auth.signOut().then(() => {
+        db = { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
+        saveLocal();
+        document.getElementById('app-content').classList.add('hidden');
+        document.getElementById('view-login').classList.remove('hidden');
+    });
+}
+
+function toggleCheck(el) {
+    el.classList.toggle('ok');
+}
+
+function toggleFiscalizacao() {
+    const motivo = document.getElementById('r-motivo').value;
+    const sec = document.getElementById('sec-fiscalizacao');
+    if(motivo === "Fiscalização") {
+        sec.classList.remove('hidden');
+    } else {
+        sec.classList.add('hidden');
+    }
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            fotoBase64 = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function gerenciarIntervalo() {
+    const btn = document.getElementById('btn-intervalo');
+    if(!db.intervaloAtivo) {
+        db.intervaloAtivo = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        btn.innerText = "☕ FINALIZAR INTERVALO";
+        btn.classList.remove('btn-info');
+        btn.classList.add('btn-danger');
+        alert("Intervalo iniciado às " + db.intervaloAtivo);
+    } else {
+        const fim = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        alert(`Intervalo finalizado. Duração: das ${db.intervaloAtivo} às ${fim}`);
+        db.intervaloAtivo = null;
+        btn.innerText = "☕ INICIAR INTERVALO";
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-info');
+    }
+    saveLocal();
+}
+
+function atualizarSelectPostos() {
+    const sel = document.getElementById('r-posto');
+    sel.innerHTML = '<option value="">Selecione o Posto...</option>';
+    db.postos.forEach(p => {
+        sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`;
+    });
 }
 
 function atualizarSelectPostosAdmin() {
     const sel = document.getElementById('adm-posto');
-    sel.innerHTML = '<option value="">Selecione o posto...</option>';
-    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
+    sel.innerHTML = '<option value="">Selecione o Posto...</option>';
+    db.postos.forEach(p => {
+        sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`;
+    });
+}
+
+function renderPostos() {
+    const busca = document.getElementById('busca-posto').value.toUpperCase();
+    const lista = document.getElementById('lista-postos');
+    lista.innerHTML = "";
+    
+    db.postos.filter(p => p.nome.includes(busca)).forEach(p => {
+        lista.innerHTML += `
+            <div class="posto-item">
+                <div>
+                    <b>${p.nome}</b><br>
+                    <small style="color:#94a3b8;">${p.endereco}</small>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function renderRondas() {
+    const hist = document.getElementById('historico-rondas');
+    hist.innerHTML = "";
+    if(db.rondas.length === 0) {
+        hist.innerHTML = "<p style='color:#94a3b8; font-size:0.8rem; text-align:center;'>Nenhuma atividade registrada hoje.</p>";
+        return;
+    }
+    db.rondas.forEach(r => {
+        hist.innerHTML += `
+            <div class="ronda-entry">
+                <b>${r.hora} - ${r.posto}</b> [${r.motivo}]<br>
+                <small style="color:#a3bffa;">Colaborador: ${r.colaborador} | KM: ${r.km}</small>
+                ${r.obs ? `<br><small style="color:#94a3b8;">Obs: ${r.obs}</small>` : ''}
+            </div>
+        `;
+    });
 }
 
 async function salvarRondaComoAdmin() {
     const uid = document.getElementById('adm-usuario').value;
     const posto = document.getElementById('adm-posto').value;
-    if(!uid || !posto) return alert("Selecione operador e posto!");
+    if(!uid || !posto) return alert("Selecione o operador e o posto!");
+    
     const novaRonda = {
-        id: Date.now(), uid: uid, posto: posto,
-        motivo: document.getElementById('adm-motivo').value,
-        km: document.getElementById('adm-km').value || '0',
-        data: document.getElementById('adm-data').value.split('-').reverse().join('/'),
-        hora: document.getElementById('adm-hora').value,
+        id: Date.now(),
+        uid: uid,
+        posto: posto,
+        km: document.getElementById('adm-km').value || "0",
         colaborador: document.getElementById('adm-func').value || "N/A",
-        obs: document.getElementById('adm-obs').value + " (Admin)",
-        checklist: {"APRESENTAÇÃO": "OK", "UNIFORME": "OK", "POSTURA": "OK", "LIVRO OCO.": "OK", "MATERIAL": "OK", "OUTROS": "OK"},
-        foto: "", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        motivo: document.getElementById('adm-motivo').value,
+        obs: document.getElementById('adm-obs').value,
+        data: document.getElementById('adm-data').value,
+        hora: document.getElementById('adm-hora').value,
+        foto: "",
+        ativo: true, // Mantém compatível com a estrutura de exclusão lógica
+        checklist: {}
     };
-    await fs.collection("rondas").add(novaRonda);
-    alert("✅ Ronda inserida no perfil do operador!");
+    
+    try {
+        await fs.collection("rondas").doc(novaRonda.id.toString()).set(novaRonda);
+        alert("✅ Ronda lançada oficialmente como administrador!");
+        document.getElementById('adm-km').value = "";
+        document.getElementById('adm-func').value = "";
+        document.getElementById('adm-obs').value = "";
+    } catch(e) {
+        alert("Erro ao salvar lançamento administrativo: " + e.message);
+    }
 }
+
+// Ouvinte de Monitoramento de Sessão Inicial
+auth.onAuthStateChanged(user => {
+    if(user) {
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        carregarDadosSincronizados(user.uid);
+    } else {
+        document.getElementById('app-content').classList.add('hidden');
+        document.getElementById('view-login').classList.remove('hidden');
+    }
+});
 </script>
 </body>
 </html>
