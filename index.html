@@ -65,18 +65,30 @@
 <body>
 
 <div id="view-login" class="container">
-    <div style="text-align: center; padding: 50px 0;">
+    <div style="text-align: center; padding: 30px 0;">
         <h1 style="color: var(--accent); letter-spacing: 3px; margin:0;">SENTINELA OPS</h1>
         <p style="color: #94a3b8; font-size: 0.8rem;">SISTEMA OPERACIONAL EM NUVEM</p>
     </div>
     <div class="card">
-        <h3>ACESSO RESTRITO</h3>
+        <h3 id="auth-title">ACESSO AO SISTEMA</h3>
+        
         <label>Email Operacional</label>
         <input type="email" id="login-email" placeholder="seu@email.com">
         <label>Senha</label>
         <input type="password" id="login-senha" placeholder="******">
-        <button class="btn btn-primary" onclick="login()">ENTRAR</button>
-        <button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
+        
+        <div id="campos-cadastro" class="hidden">
+            <label>Nome Completo</label>
+            <input type="text" id="reg-nome" placeholder="Nome do Operador">
+            <label>Matrícula</label>
+            <input type="text" id="reg-matricula" placeholder="0000">
+            <label>Cargo</label>
+            <input type="text" id="reg-cargo" placeholder="Ex: Supervisor / Vigilante">
+        </div>
+
+        <button class="btn btn-primary" id="btn-login-main" onclick="login()">ENTRAR</button>
+        <button class="btn btn-info" id="btn-registrar-toggle" onclick="toggleModoCadastro()" style="background: transparent; border: 1px solid #475569;">QUERO ME CADASTRAR</button>
+        <button class="btn btn-success hidden" id="btn-confirmar-reg" onclick="cadastrar()" style="background: var(--success);">FINALIZAR CADASTRO</button>
     </div>
 </div>
 
@@ -157,14 +169,20 @@
             <label>Viatura (Placa)</label><input type="text" id="p-placa">
             <label>Empresa</label><input type="text" id="p-empresa">
             <label>CNPJ</label><input type="text" id="p-cnpj">
-            <button class="btn btn-primary" onclick="salvarPerfil()">SALVAR NO CLOUD</button>
+            <button class="btn btn-primary" onclick="salvarPerfil()">SALVAR DADOS NO CLOUD</button>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--danger);">
+            <h3>SEGURANÇA</h3>
+            <label>Nova Senha (mín. 6 caracteres)</label>
+            <input type="password" id="p-nova-senha" placeholder="Digite a nova senha">
+            <button class="btn btn-danger" onclick="alterarSenha()">ALTERAR SENHA DE ACESSO</button>
         </div>
     </div>
 
 <div id="view-admin" class="container hidden">
     <div class="card">
         <h3>LANÇAMENTO RETROATIVO / GESTÃO</h3>
-        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px;">Lance rondas em nome de qualquer operador. O sistema processará como uma atividade real.</p>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px;">Lance rondas em nome de qualquer operador.</p>
         <label>1. SELECIONE O OPERADOR *</label>
         <select id="adm-usuario" onchange="atualizarVtrAdmin()"></select>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
@@ -223,14 +241,79 @@ let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, p
 let fotoBase64 = "";
 let listaUsuariosAdmin = [];
 
+function toggleModoCadastro() {
+    const campos = document.getElementById('campos-cadastro');
+    const btnLogin = document.getElementById('btn-login-main');
+    const btnRegToggle = document.getElementById('btn-registrar-toggle');
+    const btnConfirmar = document.getElementById('btn-confirmar-reg');
+    const title = document.getElementById('auth-title');
+
+    if(campos.classList.contains('hidden')) {
+        campos.classList.remove('hidden');
+        btnLogin.classList.add('hidden');
+        btnConfirmar.classList.remove('hidden');
+        btnRegToggle.innerText = "VOLTAR AO LOGIN";
+        title.innerText = "CADASTRO DE NOVO OPERADOR";
+    } else {
+        campos.classList.add('hidden');
+        btnLogin.classList.remove('hidden');
+        btnConfirmar.classList.add('hidden');
+        btnRegToggle.innerText = "QUERO ME CADASTRAR";
+        title.innerText = "ACESSO AO SISTEMA";
+    }
+}
+
+async function cadastrar() {
+    const email = document.getElementById('login-email').value;
+    const senha = document.getElementById('login-senha').value;
+    const nome = document.getElementById('reg-nome').value;
+    const mat = document.getElementById('reg-matricula').value;
+    const cargo = document.getElementById('reg-cargo').value;
+
+    if(!email || !senha || !nome || !mat || !cargo) {
+        return alert("Por favor, preencha todos os campos do cadastro!");
+    }
+
+    try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, senha);
+        const uid = userCredential.user.uid;
+
+        // Cria o perfil inicial no Firestore
+        const perfilInicial = {
+            nome: nome,
+            matricula: mat,
+            cargo: cargo,
+            role: "operador",
+            placa: "",
+            empresa: "",
+            cnpj: ""
+        };
+
+        await fs.collection("usuarios").doc(uid).set(perfilInicial);
+        alert("Conta criada com sucesso! Bem-vindo ao Sentinela OPS.");
+    } catch(err) {
+        alert("Erro ao cadastrar: " + err.message);
+    }
+}
+
+async function alterarSenha() {
+    const novaSenha = document.getElementById('p-nova-senha').value;
+    if(!novaSenha || novaSenha.length < 6) return alert("A senha deve ter no mínimo 6 dígitos.");
+
+    try {
+        await auth.currentUser.updatePassword(novaSenha);
+        alert("✅ Senha alterada com sucesso!");
+        document.getElementById('p-nova-senha').value = "";
+    } catch(e) {
+        alert("Erro ao alterar senha. Por segurança, saia e entre novamente no app antes de tentar trocar a senha.");
+    }
+}
+
 function gerenciarMenuAdmin() {
     const navAdmin = document.getElementById('nav-admin');
     if (navAdmin) {
-        if (isAdmin()) {
-            navAdmin.classList.remove('hidden');
-        } else {
-            navAdmin.classList.add('hidden');
-        }
+        if (isAdmin()) navAdmin.classList.remove('hidden');
+        else navAdmin.classList.add('hidden');
     }
 }
 
@@ -253,14 +336,12 @@ async function carregarDadosSincronizados(uid) {
         gerenciarMenuAdmin(); 
         showView('home');
     } catch (e) {
-        console.error("Erro na sincronização inicial:", e);
+        console.error("Erro na sincronização:", e);
         gerenciarMenuAdmin();
     }
 }
 
-function isAdmin() {
-    return db.perfil && db.perfil.role === "admin";
-}
+function isAdmin() { return db.perfil && db.perfil.role === "admin"; }
 
 auth.onAuthStateChanged(user => {
     if (user) {
@@ -276,14 +357,8 @@ auth.onAuthStateChanged(user => {
 function login() {
     const e = document.getElementById('login-email').value;
     const s = document.getElementById('login-senha').value;
-    if(!e || !s) return alert("Preencha os campos!");
+    if(!e || !s) return alert("Preencha email e senha!");
     auth.signInWithEmailAndPassword(e, s).catch(err => alert("Erro: " + err.message));
-}
-
-function cadastrar() {
-    const e = document.getElementById('login-email').value;
-    const s = document.getElementById('login-senha').value;
-    auth.createUserWithEmailAndPassword(e, s).then(() => alert("Conta criada!")).catch(err => alert(err.message));
 }
 
 function logout() { auth.signOut(); }
@@ -303,11 +378,7 @@ function showView(v) {
     if (v === 'perfil') preencherCamposPerfil();
     if (v === 'postos') renderPostos();
     if (v === 'admin') {
-        if (!isAdmin()) {
-            alert("Acesso restrito a Administradores.");
-            showView('home');
-            return;
-        }
+        if (!isAdmin()) { showView('home'); return; }
         carregarUsuariosParaAdmin();
         atualizarSelectPostosAdmin();
         document.getElementById('adm-data').value = new Date().toISOString().split('T')[0];
@@ -345,10 +416,8 @@ async function salvarRonda() {
         saveLocal();
         renderRondas();
         limparFormRonda();
-        alert("✅ Ronda salva com sucesso!");
-    } catch(e) {
-        alert("Erro ao salvar ronda: " + e.message);
-    }
+        alert("✅ Ronda salva!");
+    } catch(e) { alert("Erro ao salvar: " + e.message); }
 }
 
 function renderRondas() {
@@ -360,7 +429,9 @@ function renderRondas() {
                     <strong>${r.hora}</strong> - ${r.posto}<br>
                     <small>${r.motivo} | KM: ${r.km}</small>
                 </div>
-                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>        </div>
+                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
+            </div>
+        </div>
     `).join('');
 }
 
@@ -370,74 +441,47 @@ function gerarCardIndividual(r) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
     let y = 10;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10); doc.setFont("helvetica", "bold");
     doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
     y += 7;
     if (r.foto) { try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; } }
-    doc.setFontSize(11);
-    doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
-    y += 7;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11); doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
+    y += 7; doc.setFontSize(8); doc.setFont("helvetica", "normal");
     doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
-    y += 5;
-    doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
-    y += 5;
-    doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
-    y += 8;
-    doc.setFont("helvetica", "bold");
-    doc.text("STATUS OPERACIONAL:", 5, y);
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    Object.entries(r.checklist || {}).forEach(([item, status]) => {
-        y += 4;
-        doc.text(`• ${item}: ${status}`, 8, y);
-    });
-    y += 8;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text("OBSERVAÇÕES:", 5, y);
-    doc.setFont("helvetica", "normal");
-    const obs = doc.splitTextToSize(r.obs, 70);
-    doc.text(obs, 5, y + 5);
-    y += (obs.length * 5) + 15;
-    doc.setFont("helvetica", "bold");
-    doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
-    y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
-    doc.save(`Card_${r.posto}_${r.hora.replace(':','-')}.pdf`);
+    y += 5; doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
+    y += 5; doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
+    y += 8; doc.setFont("helvetica", "bold"); doc.text("STATUS OPERACIONAL:", 5, y);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    Object.entries(r.checklist || {}).forEach(([item, status]) => { y += 4; doc.text(`• ${item}: ${status}`, 8, y); });
+    y += 8; doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("OBSERVAÇÕES:", 5, y);
+    doc.setFont("helvetica", "normal"); const obs = doc.splitTextToSize(r.obs, 70); doc.text(obs, 5, y + 5);
+    y += (obs.length * 5) + 15; doc.setFont("helvetica", "bold"); doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
+    y += 5; doc.setFont("helvetica", "normal"); doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
+    doc.save(`Card_${r.posto}.pdf`);
 }
 
 async function adicionarPosto() {
-    if (!isAdmin()) return alert("Acesso negado: apenas administradores podem gerenciar postos.");
+    if (!isAdmin()) return;
     const nome = prompt("Nome do Posto:");
     if(!nome) return;
     const endereco = prompt("Endereço:");
     const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
     const docRef = await fs.collection("postos").add(novoPosto);
     db.postos.push({ id: docRef.id, ...novoPosto });
-    saveLocal();
-    renderPostos();
+    saveLocal(); renderPostos();
 }
 
 function renderPostos() {
     const busca = document.getElementById('busca-posto').value.toUpperCase();
     const container = document.getElementById('lista-postos');
     const btnNovoPosto = document.getElementById('btn-novo-posto');
-    
-    // Sincroniza a visibilidade apenas dos botões de gestão (Posto e Edição)
     if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
-
     const filtrados = db.postos.filter(p => p.nome.includes(busca));
     container.innerHTML = filtrados.map((p, i) => `
         <div class="posto-item">
-            <div style="flex:1;">
-                <b>${p.nome}</b><br><small>${p.endereco}</small>
-            </div>
+            <div style="flex:1;"><b>${p.nome}</b><br><small>${p.endereco}</small></div>
             <div style="display:flex;">
-                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
+                <button onclick="window.open('http://google.com/maps?q=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
                 ${isAdmin() ? `
                     <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
                     <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
@@ -448,62 +492,41 @@ function renderPostos() {
 }
 
 async function editarPosto(id, index) {
-    if (!isAdmin()) return alert("Acesso negado.");
+    if (!isAdmin()) return;
     const posto = db.postos[index];
     const novoNome = prompt("Editar nome do Posto:", posto.nome);
     const novoEndereco = prompt("Editar endereço:", posto.endereco);
     if (novoNome) {
-        const dadosAtualizados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
-        if(id) await fs.collection("postos").doc(id).update(dadosAtualizados);
-        db.postos[index] = { ...posto, ...dadosAtualizados };
-        saveLocal();
-        renderPostos();
+        const dados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
+        if(id) await fs.collection("postos").doc(id).update(dados);
+        db.postos[index] = { ...posto, ...dados };
+        saveLocal(); renderPostos();
     }
 }
 
 async function excluirPosto(id, index) {
-    if (!isAdmin()) return alert("Acesso negado.");
+    if (!isAdmin()) return;
     if(!confirm("Excluir posto?")) return;
     if(id) await fs.collection("postos").doc(id).delete();
     db.postos.splice(index, 1);
-    saveLocal();
-    renderPostos();
+    saveLocal(); renderPostos();
 }
 
 async function zerarRondasPlantao() {
-    if (!auth.currentUser) return alert("Usuário não autenticado.");
-
-    const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá apagar todas as rondas registradas do SEU PERFIL para iniciar um novo plantão.\n\nDeseja continuar?");
+    const confirmar = confirm("Deseja apagar todas as rondas do SEU PERFIL?");
     if (!confirmar) return;
-
     try {
-        // Remove do Firebase (Apenas do usuário logado)
-        await excluirRondasFirebaseUsuario(auth.currentUser.uid);
-        // Remove do LocalStorage
-        limparDadosLocaisRondas();
-        // Atualiza a tela
-        renderRondas();
-        alert("✅ Rondas zeradas com sucesso! Bom plantão.");
-    } catch (e) { 
-        alert("Erro ao zerar rondas: " + e.message + "\n\nVerifique as regras de segurança do Firebase (Permissão de Delete)."); 
-    }
-}
-
-async function excluirRondasFirebaseUsuario(uid) {
-    // Processa a exclusão em blocos (batches) para eficiência
-    while (true) {
-        const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
-        if (snap.empty) break;
-        const batch = fs.batch();
-        snap.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-        if (snap.size < 450) break;
-    }
-}
-
-function limparDadosLocaisRondas() {
-    db.rondas = [];
-    saveLocal();
+        const uid = auth.currentUser.uid;
+        while (true) {
+            const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
+            if (snap.empty) break;
+            const batch = fs.batch();
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+        }
+        db.rondas = []; saveLocal(); renderRondas();
+        alert("✅ Rondas zeradas!");
+    } catch (e) { alert("Erro: " + e.message); }
 }
 
 async function salvarPerfil() {
@@ -518,7 +541,7 @@ async function salvarPerfil() {
     db.perfil = { ...db.perfil, ...p };
     saveLocal();
     await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true });
-    alert("✅ Perfil salvo!");
+    alert("✅ Perfil atualizado!");
 }
 
 function preencherCamposPerfil() {
@@ -543,10 +566,7 @@ function gerenciarIntervalo() {
         db.intervaloAtivo = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
         btn.innerText = "☕ EM INTERVALO (CLIQUE P/ VOLTAR)";
         btn.style.background = "var(--danger)";
-        alert("Intervalo iniciado às " + db.intervaloAtivo);
     } else {
-        const fim = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-        alert(`Intervalo finalizado!\nInício: ${db.intervaloAtivo}\nFim: ${fim}`);
         db.intervaloAtivo = null;
         btn.innerText = "☕ INICIAR INTERVALO";
         btn.style.background = "#2563eb";
@@ -569,10 +589,7 @@ function previewImage(input) {
             img.onload = function () {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const maxWidth = 800;
-                const scale = maxWidth / img.width;
-                canvas.width = maxWidth;
-                canvas.height = img.height * scale;
+                canvas.width = 800; canvas.height = img.height * (800 / img.width);
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
             };
@@ -582,118 +599,64 @@ function previewImage(input) {
 }
 
 function limparFormRonda() {
-    document.getElementById('r-km').value = "";
-    document.getElementById('r-obs').value = "";
-    document.getElementById('r-func').value = "";
-    fotoBase64 = "";
+    document.getElementById('r-km').value = ""; document.getElementById('r-obs').value = "";
+    document.getElementById('r-func').value = ""; fotoBase64 = "";
     document.getElementById('r-foto').value = "";
 }
 
 function gerarRelatorioPlantao() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const p = db.perfil;
     let y = 20;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
+    doc.setFontSize(16); doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
+    y += 15; doc.setFontSize(10);
+    doc.text(`Operador: ${db.perfil.nome || "N/A"} | Matrícula: ${db.perfil.matricula || "N/A"}`, 10, y);
     y += 15;
-    doc.setFontSize(10);
-    doc.text("DADOS DO OPERADOR", 10, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
-    doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
-    y += 5;
-    doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
-    doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
-    y += 10;
-    doc.setLineWidth(0.5);
-    doc.line(10, y, 200, y); y += 10;
-    doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
-    db.rondas.forEach((r, index) => {
-        if(y > 260) { doc.addPage(); y = 20; }
-        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-        doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
-        y += 5; doc.setFont("helvetica", "normal");
-        doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
-        y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
-        y += 5; const obs = doc.splitTextToSize(r.obs, 180); doc.text(obs, 15, y);
-        y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
+    db.rondas.forEach((r, i) => {
+        if(y > 270) { doc.addPage(); y = 20; }
+        doc.text(`${i+1}. ${r.data} ${r.hora} - ${r.posto} (${r.motivo})`, 10, y);
+        y += 7;
     });
-    doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+    doc.save(`Relatorio_${new Date().toLocaleDateString('pt-BR')}.pdf`);
 }
 
 async function carregarUsuariosParaAdmin() {
-    try {
-        const snap = await fs.collection("usuarios").get();
-        listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const sel = document.getElementById('adm-usuario');
-        if(!sel) return;
-        sel.innerHTML = '<option value="">Selecione o Operador...</option>';
-        listaUsuariosAdmin.sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
-        listaUsuariosAdmin.forEach(u => {
-            sel.innerHTML += `<option value="${u.id}">${u.nome || u.email} (${u.cargo || 'Operador'})</option>`;
-        });
-    } catch (e) {
-        console.error("Erro ao carregar usuários para o painel:", e);
-    }
+    const snap = await fs.collection("usuarios").get();
+    listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const sel = document.getElementById('adm-usuario');
+    sel.innerHTML = '<option value="">Selecione o Operador...</option>';
+    listaUsuariosAdmin.forEach(u => sel.innerHTML += `<option value="${u.id}">${u.nome || u.email}</option>`);
 }
 
 function atualizarVtrAdmin() {
-    const uidSelecionado = document.getElementById('adm-usuario').value;
-    const usuario = listaUsuariosAdmin.find(u => u.id === uidSelecionado);
-    const inputPlaca = document.getElementById('adm-placa');
-    if(inputPlaca) {
-        inputPlaca.value = usuario ? (usuario.placa || "SEM VTR") : "";
-    }
+    const uid = document.getElementById('adm-usuario').value;
+    const u = listaUsuariosAdmin.find(x => x.id === uid);
+    document.getElementById('adm-placa').value = u ? (u.placa || "") : "";
 }
 
 function atualizarSelectPostosAdmin() {
     const sel = document.getElementById('adm-posto');
-    if(!sel) return;
     sel.innerHTML = '<option value="">Selecione o posto...</option>';
     db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
 }
 
 async function salvarRondaComoAdmin() {
-    const uidOperador = document.getElementById('adm-usuario').value;
+    const uid = document.getElementById('adm-usuario').value;
     const posto = document.getElementById('adm-posto').value;
-    const dataInput = document.getElementById('adm-data').value;
-    const horaInput = document.getElementById('adm-hora').value;
-
-    if(!uidOperador) return alert("Selecione o operador que receberá a ronda!");
-    if(!posto) return alert("Selecione o posto!");
-    if(!dataInput || !horaInput) return alert("Preencha data e hora do evento!");
-
-    const dataFormatada = dataInput.split('-').reverse().join('/');
-    const checklistPadrao = {
-        "APRESENTAÇÃO": "OK", "UNIFORME": "OK", "POSTURA": "OK",
-        "LIVRO OCO.": "OK", "MATERIAL": "OK", "OUTROS": "OK"
-    };
-    const novaRondaAdmin = {
-        id: Date.now(),
-        uid: uidOperador, 
-        posto: posto,
+    if(!uid || !posto) return alert("Selecione operador e posto!");
+    const novaRonda = {
+        id: Date.now(), uid: uid, posto: posto,
         motivo: document.getElementById('adm-motivo').value,
         km: document.getElementById('adm-km').value || '0',
-        data: dataFormatada,
-        hora: horaInput,
+        data: document.getElementById('adm-data').value.split('-').reverse().join('/'),
+        hora: document.getElementById('adm-hora').value,
         colaborador: document.getElementById('adm-func').value || "N/A",
-        obs: document.getElementById('adm-obs').value + " (Lançado via Painel Admin)",
-        checklist: checklistPadrao,
-        foto: "", 
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        obs: document.getElementById('adm-obs').value + " (Admin)",
+        checklist: {"APRESENTAÇÃO": "OK", "UNIFORME": "OK", "POSTURA": "OK", "LIVRO OCO.": "OK", "MATERIAL": "OK", "OUTROS": "OK"},
+        foto: "", timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
-    try {
-        await fs.collection("rondas").add(novaRondaAdmin);
-        document.getElementById('adm-km').value = "";
-        document.getElementById('adm-func').value = "";
-        document.getElementById('adm-obs').value = "";
-        alert("✅ Ronda inserida com sucesso no perfil do operador!");
-    } catch(e) {
-        alert("Erro técnico ao injetar ronda no banco remoto: " + e.message);
-    }
+    await fs.collection("rondas").add(novaRonda);
+    alert("✅ Ronda inserida no perfil do operador!");
 }
 </script>
 </body>
