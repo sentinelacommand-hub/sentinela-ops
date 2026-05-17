@@ -17,57 +17,29 @@
             --success: #238636; --bg: #0f1c2e; --card: #16233a;
             --text: #e0e7ff; --text-light: #a3bffa;
         }
-        * { box-sizing: border-box;
-        }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text);
-        padding-bottom: 75px; line-height: 1.4; }
-        .header { background: var(--primary); color: white;
-        padding: 14px 16px; border-bottom: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;
-        font-weight: bold; }
-        .header h1 { margin: 0; font-size: 1.15rem; text-transform: uppercase;
-        letter-spacing: 1.5px; }
-        .container { padding: 12px; max-width: 640px; margin: 0 auto;
-        }
-        .card { background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 18px;
-        margin-bottom: 16px; }
-        .card h3 { margin: 0 0 16px 0; padding-bottom: 10px;
-        border-bottom: 3px solid var(--accent); color: var(--accent); font-size: 0.98rem; text-transform: uppercase; font-weight: 700;
-        }
-        label { display: block; font-size: 0.76rem; font-weight: 600; color: #94a3b8;
-        margin: 14px 0 5px 0; text-transform: uppercase; }
-        input, select, textarea { width: 100%;
-        padding: 13px 14px; background: #1e2a44; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 1rem;
-        }
-        .btn { width: 100%; padding: 16px; margin-top: 12px; border: none; border-radius: 6px;
-        font-weight: 700; font-size: 0.96rem; text-transform: uppercase; cursor: pointer; }
-        .btn-primary { background: var(--accent);
-        color: #0a192f; }
-        .btn-danger { background: var(--danger); color: white;
-        }
-        .btn-info { background: #2563eb; color: white;
-        }
-        .posto-item { background: #1e2a44; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex;
-        justify-content: space-between; align-items: center; border: 1px solid #334155; }
-        .btn-small { padding: 6px 10px;
-        border-radius: 4px; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; margin-left: 5px; color: white; text-transform: uppercase;
-        }
-        .ronda-entry { background: #1e2a44; padding: 13px; border-radius: 6px; margin-bottom: 9px;
-        border-left: 5px solid var(--accent); font-size: 0.87rem; }
-        .nav-bar { position: fixed; bottom: 0;
-        left: 0; right: 0; background: var(--primary); display: flex; border-top: 4px solid var(--accent); z-index: 1000;
-        }
-        .nav-item { flex: 1; text-align: center; padding: 10px 6px; color: #94a3b8;
-        font-size: 0.7rem; font-weight: 700; text-transform: uppercase; cursor: pointer; }
-        .nav-item.active { color: var(--accent);
-        }
-        .hidden { display: none !important;
-        }
-        .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px;
-        }
-        .check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px;
-        border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; }
-        .check-item.ok { border-color: var(--success);
-        color: var(--success); background: rgba(35, 134, 54, 0.2); }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 75px; line-height: 1.4; }
+        .header { background: var(--primary); color: white; padding: 14px 16px; border-bottom: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; font-weight: bold; }
+        .header h1 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1.5px; }
+        .container { padding: 12px; max-width: 640px; margin: 0 auto; }
+        .card { background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+        .card h3 { margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 3px solid var(--accent); color: var(--accent); font-size: 0.98rem; text-transform: uppercase; font-weight: 700; }
+        label { display: block; font-size: 0.76rem; font-weight: 600; color: #94a3b8; margin: 14px 0 5px 0; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 13px 14px; background: #1e2a44; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 1rem; }
+        .btn { width: 100%; padding: 16px; margin-top: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.96rem; text-transform: uppercase; cursor: pointer; }
+        .btn-primary { background: var(--accent); color: #0a192f; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: #2563eb; color: white; }
+        .posto-item { background: #1e2a44; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+        .btn-small { padding: 6px 10px; border-radius: 4px; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; margin-left: 5px; color: white; text-transform: uppercase; }
+        .ronda-entry { background: #1e2a44; padding: 13px; border-radius: 6px; margin-bottom: 9px; border-left: 5px solid var(--accent); font-size: 0.87rem; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); display: flex; border-top: 4px solid var(--accent); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; padding: 10px 6px; color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .hidden { display: none !important; }
+        .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+        .check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px; border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; }
+        .check-item.ok { border-color: var(--success); color: var(--success); background: rgba(35, 134, 54, 0.2); }
     </style>
 </head>
 <body>
@@ -95,22 +67,17 @@
     </div>
 
     <div id="view-home" class="container">
-        <div class="card" onclick="showView('rondas')" style="cursor:pointer;
-        border-left: 5px solid var(--accent);">📍 <b>REGISTRO DE RONDAS</b></div>
-        <div class="card" onclick="showView('postos')" style="cursor:pointer;
-        border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
-        <div class="card" onclick="gerarRelatorioPlantao()" style="cursor:pointer;
-        border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
-        <div class="card" onclick="showView('perfil')" style="cursor:pointer;
-        border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
+        <div class="card" onclick="showView('rondas')" style="cursor:pointer; border-left: 5px solid var(--accent);">📍 <b>REGISTRO DE RONDAS</b></div>
+        <div class="card" onclick="showView('postos')" style="cursor:pointer; border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
+        <div class="card" onclick="gerarRelatorioPlantao()" style="cursor:pointer; border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
+        <div class="card" onclick="showView('perfil')" style="cursor:pointer; border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
     </div>
 
     <div id="view-rondas" class="container hidden">
         <div class="card">
             <h3>NOVA ATIVIDADE</h3>
             <button id="btn-intervalo" class="btn btn-info" onclick="gerenciarIntervalo()">☕ INICIAR INTERVALO</button>
-            <div style="display:grid;
-            grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
                 <div><label>VTR</label><input type="text" id="r-placa" readonly></div>
                 <div><label>KM</label><input type="number" id="r-km"></div>
             </div>
@@ -173,59 +140,59 @@
             <button class="btn btn-primary" onclick="salvarPerfil()">SALVAR NO CLOUD</button>
         </div>
     </div>
-<div id="view-admin" class="container hidden">
-    <div class="card">
-        <h3>LANÇAMENTO RETROATIVO / GESTÃO</h3>
-        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px;">Lance rondas em nome de qualquer operador. O sistema processará como uma atividade real.</p>
-        
-        <label>1. SELECIONE O OPERADOR *</label>
-        <select id="adm-usuario" onchange="atualizarVtrAdmin()"></select>
+    <div id="view-admin" class="container hidden">
+        <div class="card">
+            <h3>LANÇAMENTO RETROATIVO / GESTÃO</h3>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px;">Lance rondas em nome de qualquer operador. O sistema processará como uma atividade real.</p>
+            
+            <label>1. SELECIONE O OPERADOR *</label>
+            <select id="adm-usuario" onchange="atualizarVtrAdmin()"></select>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div>
-                <label>VTR (Placa)</label>
-                <input type="text" id="adm-placa" readonly style="opacity: 0.7;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                    <label>VTR (Placa)</label>
+                    <input type="text" id="adm-placa" readonly style="opacity: 0.7;">
+                </div>
+                <div>
+                    <label>KM Atual</label>
+                    <input type="number" id="adm-km">
+                </div>
             </div>
-            <div>
-                <label>KM Atual</label>
-                <input type="number" id="adm-km">
+
+            <label>2. POSTO / LOCAL *</label>
+            <select id="adm-posto"></select>
+
+            <label>Colaborador no Local</label>
+            <input type="text" id="adm-func" placeholder="Nome do colaborador">
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                    <label>Data da Ronda</label>
+                    <input type="date" id="adm-data">
+                </div>
+                <div>
+                    <label>Hora da Ronda</label>
+                    <input type="time" id="adm-hora">
+                </div>
             </div>
+
+            <label>Missão</label>
+            <select id="adm-motivo">
+                <option value="Fiscalização">Fiscalização</option>
+                <option value="De base">De base</option>
+                <option value="Complemento">Complemento</option>
+                <option value="Cobertura">Cobertura</option>
+                <option value="Entrega de material">Entrega de material</option>
+                <option value="Deslocamento">Deslocamento</option>
+                <option value="Outros">Outros</option>
+            </select>
+
+            <label>Observações</label>
+            <textarea id="adm-obs" rows="3" placeholder="Observações do lançamento administrativo..."></textarea>
+
+            <button class="btn btn-primary" onclick="salvarRondaComoAdmin()" style="background: #2563eb; color: white;">⚡ LANÇAR RONDA OFICIAL</button>
         </div>
-
-        <label>2. POSTO / LOCAL *</label>
-        <select id="adm-posto"></select>
-
-        <label>Colaborador no Local</label>
-        <input type="text" id="adm-func" placeholder="Nome do colaborador">
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div>
-                <label>Data da Ronda</label>
-                <input type="date" id="adm-data">
-            </div>
-            <div>
-                <label>Hora da Ronda</label>
-                <input type="time" id="adm-hora">
-            </div>
-        </div>
-
-        <label>Missão</label>
-        <select id="adm-motivo">
-            <option value="Fiscalização">Fiscalização</option>
-            <option value="De base">De base</option>
-            <option value="Complemento">Complemento</option>
-            <option value="Cobertura">Cobertura</option>
-            <option value="Entrega de material">Entrega de material</option>
-            <option value="Deslocamento">Deslocamento</option>
-            <option value="Outros">Outros</option>
-        </select>
-
-        <label>Observações</label>
-        <textarea id="adm-obs" rows="3" placeholder="Observações do lançamento administrativo..."></textarea>
-
-        <button class="btn btn-primary" onclick="salvarRondaComoAdmin()" style="background: #2563eb; color: white;">⚡ LANÇAR RONDA OFICIAL</button>
     </div>
-</div>
 
     <nav class="nav-bar">
         <div class="nav-item active" id="nav-home" onclick="showView('home')">🏠 HOME</div>
@@ -255,7 +222,6 @@ let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, p
 let fotoBase64 = "";
 let listaUsuariosAdmin = [];
 
-// Controla a visibilidade do botão Admin na barra inferior
 function gerenciarMenuAdmin() {
     const navAdmin = document.getElementById('nav-admin');
     if (navAdmin) {
@@ -267,10 +233,9 @@ function gerenciarMenuAdmin() {
     }
 }
 
-// Busca os dados do usuário no Firestore assim que ele loga
+// CORREÇÃO: Função de escuta e sincronização temporal revisada
 async function carregarDadosSincronizados(uid) {
     try {
-        // 1. Busca o perfil do usuário no Firestore
         const userDoc = await fs.collection("usuarios").doc(uid).get();
         if (userDoc.exists) {
             db.perfil = userDoc.data();
@@ -278,29 +243,30 @@ async function carregarDadosSincronizados(uid) {
             db.perfil = { nome: auth.currentUser.email, role: "operador" };
         }
         
-        // 2. Busca os postos cadastrados na nuvem
         const postosSnap = await fs.collection("postos").get();
         db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // 3. Busca as rondas do dia do usuário logado (Filtrando as que pertencem ao plantão atual)
         const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
-        db.rondas = rondasSnap.docs.map(doc => doc.data()).filter(r => !db.perfil.ultimoZeramento || r.id > db.perfil.ultimoZeramento);
+        const hoje = new Date().toLocaleDateString('pt-BR');
+        
+        // Filtro estrito baseado na data corrente e status pós-zeramento local
+        db.rondas = rondasSnap.docs
+            .map(doc => doc.data())
+            .filter(r => r.data === hoje && (!db.perfil.ultimoZeramento || r.id > db.perfil.ultimoZeramento));
 
         saveLocal();
-        gerenciarMenuAdmin(); // Aplica a regra de exibição do menu admin
-        showView('home'); // Redireciona o usuário para a Home após carregar tudo
+        gerenciarMenuAdmin();
+        showView('home');
     } catch (e) {
         console.error("Erro na sincronização inicial:", e);
         gerenciarMenuAdmin();
     }
 }
 
-// --- SISTEMA DE PERMISSÃO ---
 function isAdmin() {
     return db.perfil && db.perfil.role === "admin";
 }
 
-// Lógica de Autenticação - Corrigida para não deslogar usuários comuns
 auth.onAuthStateChanged(user => {
     if (user) {
         document.getElementById('view-login').classList.add('hidden');
@@ -326,7 +292,6 @@ function cadastrar() {
 }
 
 function logout() { auth.signOut(); }
-
 function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
 
 function showView(v) {
@@ -334,7 +299,6 @@ function showView(v) {
     document.getElementById('view-' + v).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
     document.getElementById('nav-' + v).classList.add('active');
-    // Garante que o menu admin respeite o status do usuário em qualquer mudança de tela
     gerenciarMenuAdmin();
     if (v === 'rondas') {
         document.getElementById('r-placa').value = db.perfil.placa || "N/A";
@@ -351,12 +315,12 @@ function showView(v) {
         }
         carregarUsuariosParaAdmin();
         atualizarSelectPostosAdmin();
-        
         document.getElementById('adm-data').value = new Date().toISOString().split('T')[0];
         document.getElementById('adm-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
     }
 }
 
+// CORREÇÃO: Injeção do serverTimestamp remoto protegendo a persistência local
 async function salvarRonda() {
     const posto = document.getElementById('r-posto').value;
     if(!posto) return alert("Selecione um posto!");
@@ -381,9 +345,13 @@ async function salvarRonda() {
             "OUTROS": document.querySelectorAll('.check-item')[5].classList.contains('ok') ? "OK" : "REPROVADO"
         }
     };
+
     try {
-        await fs.collection("rondas").add(novaRonda);
-        db.rondas.unshift(novaRonda); // Adiciona no início do histórico local
+        await fs.collection("rondas").add({
+            ...novaRonda,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        db.rondas.unshift(novaRonda);
         saveLocal();
         renderRondas();
         limparFormRonda();
@@ -464,12 +432,10 @@ async function adicionarPosto() {
     renderPostos();
 }
 
-// Renderiza a lista de postos na tela
 function renderPostos() {
     const busca = document.getElementById('busca-posto').value.toUpperCase();
     const container = document.getElementById('lista-postos');
     const btnNovoPosto = document.querySelector('button[onclick="adicionarPosto()"]');
-    
     if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
     const filtrados = db.postos.filter(p => p.nome.includes(busca));
     container.innerHTML = filtrados.map((p, i) => `
@@ -478,7 +444,7 @@ function renderPostos() {
                 <b>${p.nome}</b><br><small>${p.endereco}</small>
             </div>
             <div style="display:flex;">
-                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
+                <button onclick="window.open('http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
                 ${isAdmin() ? `
                     <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
                     <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
@@ -513,7 +479,7 @@ async function excluirPosto(id, index) {
 
 async function zerarRondasPlantao() {
     if (!auth.currentUser) return alert("Usuário não autenticado.");
-    const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá apagar todas as rondas registradas do usuário logado para iniciar um novo plantão.\n\nDeseja continuar?");
+    const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá ocultar as rondas locais do seu dispositivo para iniciar uma nova jornada de trabalho.\n\nOs registros remotos salvos na nuvem continuarão intactos para auditoria da gerência.\n\nDeseja continuar?");
     if (!confirmar) return;
     try {
         const agora = Date.now();
@@ -522,7 +488,8 @@ async function zerarRondasPlantao() {
         limparDadosLocaisRondas();
         renderRondas();
         alert("✅ Rondas zeradas com sucesso! Novo plantão iniciado.");
-    } catch (e) { alert("Erro ao zerar rondas: " + e.message);
+    } catch (e) { 
+        alert("Erro ao zerar rondas: " + e.message);
     }
 }
 
@@ -554,7 +521,7 @@ async function salvarPerfil() {
     db.perfil = { ...db.perfil, ...p };
     saveLocal();
     await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true });
-alert("✅ Perfil salvo!");
+    alert("✅ Perfil salvo!");
 }
 
 function preencherCamposPerfil() {
@@ -593,8 +560,7 @@ function gerenciarIntervalo() {
 function toggleCheck(el) { el.classList.toggle('ok'); }
 function toggleFiscalizacao() {
     const m = document.getElementById('r-motivo').value;
-    document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ?
-    'block' : 'none';
+    document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
 }
 
 function previewImage(input) {
@@ -655,8 +621,8 @@ function gerarRelatorioPlantao() {
         y += 5; doc.setFont("helvetica", "normal");
         doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
         y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
-        y += 5; const obs = 
-        doc.splitTextToSize(r.obs, 180); doc.text(obs, 15, y);
+        y += 5; 
+        const obs = doc.splitTextToSize(r.obs, 180); doc.text(obs, 15, y);
         y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
     });
     doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
@@ -677,8 +643,8 @@ async function carregarUsuariosParaAdmin() {
         
         listaUsuariosAdmin.sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
         listaUsuariosAdmin.forEach(u => {
-    sel.innerHTML += `<option value="${u.id}">${u.nome || u.email} (${u.cargo || 'Operador'})</option>`;
-});
+            sel.innerHTML += `<option value="${u.id}">${u.nome || u.email} (${u.cargo || 'Operador'})</option>`;
+        });
     } catch (e) {
         console.error("Erro ao carregar usuários para o painel:", e);
     }
@@ -689,8 +655,7 @@ function atualizarVtrAdmin() {
     const usuario = listaUsuariosAdmin.find(u => u.id === uidSelecionado);
     const inputPlaca = document.getElementById('adm-placa');
     if(inputPlaca) {
-        inputPlaca.value = usuario ?
-        (usuario.placa || "SEM VTR") : "";
+        inputPlaca.value = usuario ? (usuario.placa || "SEM VTR") : "";
     }
 }
 
@@ -732,7 +697,6 @@ async function salvarRondaComoAdmin() {
     };
     try {
         await fs.collection("rondas").add(novaRondaAdmin);
-        
         document.getElementById('adm-km').value = "";
         document.getElementById('adm-func').value = "";
         document.getElementById('adm-obs').value = "";
