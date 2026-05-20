@@ -233,7 +233,7 @@ function gerenciarMenuAdmin() {
     }
 }
 
-// CORREÇÃO 04 e 05: Sincronização temporal e escuta de filtros locais revisada para padrão ISO e retrocompatibilidade
+// CORREÇÃO: Função de escuta e sincronização temporal revisada
 async function carregarDadosSincronizados(uid) {
     try {
         const userDoc = await fs.collection("usuarios").doc(uid).get();
@@ -247,15 +247,13 @@ async function carregarDadosSincronizados(uid) {
         db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
+        const hoje = new Date().toLocaleDateString('pt-BR');
         
-        // CORREÇÃO OBRIGATÓRIA 04: Troca da captura de 'hoje' do formato brasileiro para o formato padronizado global ISO
-        const hoje = new Date().toISOString().split('T')[0];
-        
-        // CORREÇÃO OBRIGATÓRIA 05: Atualização do filtro do array para verificar de forma abrangente (.data || r.dataBR)
+        // Filtro estrito baseado na data corrente e status pós-zeramento local
         db.rondas = rondasSnap.docs
             .map(doc => doc.data())
-            .filter(r => (r.data || r.dataBR) === hoje && (!db.perfil.ultimoZeramento || r.id > db.perfil.ultimoZeramento));
-            
+            .filter(r => r.data === hoje && (!db.perfil.ultimoZeramento || r.id > db.perfil.ultimoZeramento));
+
         saveLocal();
         gerenciarMenuAdmin();
         showView('home');
@@ -322,13 +320,11 @@ function showView(v) {
     }
 }
 
-// CORREÇÃO 01 e 02: Reestruturação do payload da ronda e persistência direta no Firestore
+// CORREÇÃO: Injeção do serverTimestamp remoto protegendo a persistência local
 async function salvarRonda() {
     const posto = document.getElementById('r-posto').value;
     if(!posto) return alert("Selecione um posto!");
 
-    // CORREÇÃO OBRIGATÓRIA 01: Criação da estrutura unificada e padronizada globalmente (ISO + dataBR + Timestamps)
-    const agora = new Date();
     const novaRonda = {
         id: Date.now(),
         uid: auth.currentUser.uid,
@@ -337,14 +333,8 @@ async function salvarRonda() {
         colaborador: document.getElementById('r-func').value || "N/A",
         motivo: document.getElementById('r-motivo').value,
         obs: document.getElementById('r-obs').value,
-        
-        // DATA PADRONIZADA GLOBAL (Formato ISO para filtros eficientes no Gerencial/Heatmap)
-        data: agora.toISOString().split('T')[0],
-        
-        // DATA VISUAL BRASILEIRA (Para conformidade de exibição retroativa)
-        dataBR: agora.toLocaleDateString('pt-BR'),
-        
-        hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        data: new Date().toLocaleDateString('pt-BR'),
+        hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
         foto: fotoBase64,
         checklist: {
             "APRESENTAÇÃO": document.querySelectorAll('.check-item')[0].classList.contains('ok') ? "OK" : "REPROVADO",
@@ -353,17 +343,14 @@ async function salvarRonda() {
             "LIVRO OCO.": document.querySelectorAll('.check-item')[3].classList.contains('ok') ? "OK" : "REPROVADO",
             "MATERIAL": document.querySelectorAll('.check-item')[4].classList.contains('ok') ? "OK" : "REPROVADO",
             "OUTROS": document.querySelectorAll('.check-item')[5].classList.contains('ok') ? "OK" : "REPROVADO"
-        },
-        
-        // TIMESTAMPS REQUERIDOS
-        criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-        criadoEmUnix: Date.now()
+        }
     };
 
     try {
-        // CORREÇÃO OBRIGATÓRIA 02: Inserção do objeto novaRonda totalmente limpo e estruturado diretamente no banco de dados
-        await fs.collection("rondas").add(novaRonda);
-        
+        await fs.collection("rondas").add({
+            ...novaRonda,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
         db.rondas.unshift(novaRonda);
         saveLocal();
         renderRondas();
@@ -383,9 +370,7 @@ function renderRondas() {
                     <strong>${r.hora}</strong> - ${r.posto}<br>
                     <small>${r.motivo} | KM: ${r.km}</small>
                 </div>
-                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
-            </div>
-        </div>
+                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>        </div>
     `).join('');
 }
 
@@ -405,7 +390,7 @@ function gerarCardIndividual(r) {
     y += 7;
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text(`Data: ${r.dataBR || r.data} | Hora: ${r.hora}`, 5, y);
+    doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
     y += 5;
     doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
     y += 5;
@@ -461,8 +446,8 @@ function renderPostos() {
             <div style="display:flex;">
                 <button onclick="window.open('http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
                 ${isAdmin() ? `
-                <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
-                <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
+                    <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
+                    <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
                 ` : ""}
             </div>
         </div>
@@ -503,8 +488,19 @@ async function zerarRondasPlantao() {
         limparDadosLocaisRondas();
         renderRondas();
         alert("✅ Rondas zeradas com sucesso! Novo plantão iniciado.");
-    } catch (e) {
+    } catch (e) { 
         alert("Erro ao zerar rondas: " + e.message);
+    }
+}
+
+async function excluirRondasFirebaseUsuario(uid) {
+    while (true) {
+        const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
+        if (snap.empty) break;
+        const batch = fs.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        if (snap.size < 450) break;
     }
 }
 
@@ -561,10 +557,7 @@ function gerenciarIntervalo() {
     saveLocal();
 }
 
-function toggleCheck(el) {
-    el.classList.toggle('ok');
-}
-
+function toggleCheck(el) { el.classList.toggle('ok'); }
 function toggleFiscalizacao() {
     const m = document.getElementById('r-motivo').value;
     document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
@@ -597,6 +590,120 @@ function limparFormRonda() {
     document.getElementById('r-func').value = "";
     fotoBase64 = "";
     document.getElementById('r-foto').value = "";
+}
+
+function gerarRelatorioPlantao() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const p = db.perfil;
+    let y = 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
+    y += 15;
+    doc.setFontSize(10);
+    doc.text("DADOS DO OPERADOR", 10, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
+    doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
+    y += 5;
+    doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
+    doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
+    y += 10;
+    doc.setLineWidth(0.5);
+    doc.line(10, y, 200, y); y += 10;
+    doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
+    db.rondas.forEach((r, index) => {
+        if(y > 260) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+        doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
+        y += 5; doc.setFont("helvetica", "normal");
+        doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
+        y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
+        y += 5; 
+        const obs = doc.splitTextToSize(r.obs, 180); doc.text(obs, 15, y);
+        y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
+    });
+    doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
+}
+
+// ==========================================
+//    FUNÇÕES EXCLUSIVAS DO PAINEL ADMIN
+// ==========================================
+
+async function carregarUsuariosParaAdmin() {
+    try {
+        const snap = await fs.collection("usuarios").get();
+        listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        const sel = document.getElementById('adm-usuario');
+        if(!sel) return;
+        sel.innerHTML = '<option value="">Selecione o Operador...</option>';
+        
+        listaUsuariosAdmin.sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
+        listaUsuariosAdmin.forEach(u => {
+            sel.innerHTML += `<option value="${u.id}">${u.nome || u.email} (${u.cargo || 'Operador'})</option>`;
+        });
+    } catch (e) {
+        console.error("Erro ao carregar usuários para o painel:", e);
+    }
+}
+
+function atualizarVtrAdmin() {
+    const uidSelecionado = document.getElementById('adm-usuario').value;
+    const usuario = listaUsuariosAdmin.find(u => u.id === uidSelecionado);
+    const inputPlaca = document.getElementById('adm-placa');
+    if(inputPlaca) {
+        inputPlaca.value = usuario ? (usuario.placa || "SEM VTR") : "";
+    }
+}
+
+function atualizarSelectPostosAdmin() {
+    const sel = document.getElementById('adm-posto');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
+}
+
+async function salvarRondaComoAdmin() {
+    const uidOperador = document.getElementById('adm-usuario').value;
+    const posto = document.getElementById('adm-posto').value;
+    const dataInput = document.getElementById('adm-data').value;
+    const horaInput = document.getElementById('adm-hora').value;
+
+    if(!uidOperador) return alert("Selecione o operador que receberá a ronda!");
+    if(!posto) return alert("Selecione o posto!");
+    if(!dataInput || !horaInput) return alert("Preencha data e hora do evento!");
+
+    const dataFormatada = dataInput.split('-').reverse().join('/');
+    const checklistPadrao = {
+        "APRESENTAÇÃO": "OK", "UNIFORME": "OK", "POSTURA": "OK",
+        "LIVRO OCO.": "OK", "MATERIAL": "OK", "OUTROS": "OK"
+    };
+    const novaRondaAdmin = {
+        id: Date.now(),
+        uid: uidOperador, 
+        posto: posto,
+        motivo: document.getElementById('adm-motivo').value,
+        km: document.getElementById('adm-km').value || '0',
+        data: dataFormatada,
+        hora: horaInput,
+        colaborador: document.getElementById('adm-func').value || "N/A",
+        obs: document.getElementById('adm-obs').value + " (Lançado via Painel Admin)",
+        checklist: checklistPadrao,
+        foto: "", 
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+        await fs.collection("rondas").add(novaRondaAdmin);
+        document.getElementById('adm-km').value = "";
+        document.getElementById('adm-func').value = "";
+        document.getElementById('adm-obs').value = "";
+        alert("✅ Ronda inserida com sucesso no perfil do operador!");
+    } catch(e) {
+        alert("Erro técnico ao injetar ronda no banco remoto: " + e.message);
+    }
 }
 </script>
 </body>
