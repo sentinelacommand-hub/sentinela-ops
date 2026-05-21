@@ -1,4 +1,4 @@
-AO CLICAR EM ROTA NÃO ESTA ABRINDO O GOOGLE MAPS, IDENTIFIQUE AONDE ESTA O ERRO E ME AJUDE A CORRIGIR DE FORMA MANUAL: 
+ 
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -327,16 +327,34 @@ async function salvarRonda() {
     if(!posto) return alert("Selecione um posto!");
 
     const novaRonda = {
-        id: Date.now(),
-        uid: auth.currentUser.uid,
-        posto: posto,
-        km: document.getElementById('r-km').value || "0",
-        colaborador: document.getElementById('r-func').value || "N/A",
-        motivo: document.getElementById('r-motivo').value,
-        obs: document.getElementById('r-obs').value,
-        data: new Date().toLocaleDateString('pt-BR'),
-        hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
-        foto: fotoBase64,
+    id: Date.now(),
+    uid: userGlobal.uid,
+    operador: userGlobal.displayName || "Sem Nome",
+    posto: document.getElementById('ronda-posto').value,
+    vtr: document.getElementById('ronda-vtr').value,
+    km: document.getElementById('ronda-km').value,
+    data: new Date().toLocaleDateString('pt-BR'),
+    hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+
+    // --- CORREÇÃO AQUI ---
+    // parseFloat converte o texto " -30.123" no número -30.123
+    lat: parseFloat(posicaoAtual.lat), 
+    lng: parseFloat(posicaoAtual.lng),
+    
+    // Adicione esta linha abaixo para o Firestore entender como Localização Geográfica
+    localizacao: new firebase.firestore.GeoPoint(parseFloat(posicaoAtual.lat), parseFloat(posicaoAtual.lng)),
+    
+    // Adicione esta linha para a Gerência conseguir filtrar por tempo real
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    // ---------------------
+
+    checklist: {
+        "APRESENTAÇÃO": document.getElementById('check-apresentacao').checked ? "OK" : "NÃO OK",
+        // ... (restante do seu checklist)
+    },
+    obs: document.getElementById('ronda-obs').value,
+    foto: fotoBase64
+};
         checklist: {
             "APRESENTAÇÃO": document.querySelectorAll('.check-item')[0].classList.contains('ok') ? "OK" : "REPROVADO",
             "UNIFORME": document.querySelectorAll('.check-item')[1].classList.contains('ok') ? "OK" : "REPROVADO",
