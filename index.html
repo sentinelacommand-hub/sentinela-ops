@@ -1,4 +1,12 @@
- 
+agora no sistema sentinela não consigo nem logar, clicando f12 aparece isso: Uncaught SyntaxError: Unexpected token ':'Understand this error
+6sentinela-ops/:59 Uncaught ReferenceError: login is not defined
+    at HTMLButtonElement.onclick (sentinela-ops/:59:59)Understand this error
+3sentinela-ops/:59 Uncaught ReferenceError: login is not defined
+    at HTMLButtonElement.onclick (sentinela-ops/:59:59)
+onclick @ sentinela-ops/:59Understand this error
+
+
+código sentinela;  
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -326,7 +334,7 @@ async function salvarRonda() {
     const posto = document.getElementById('r-posto').value;
     if(!posto) return alert("Selecione um posto!");
 
-    const novaRonda = {
+   const novaRonda = {
     id: Date.now(),
     uid: userGlobal.uid,
     operador: userGlobal.displayName || "Sem Nome",
@@ -336,17 +344,17 @@ async function salvarRonda() {
     data: new Date().toLocaleDateString('pt-BR'),
     hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
 
-    // --- CORREÇÃO AQUI ---
-    // parseFloat converte o texto " -30.123" no número -30.123
+    // --- CORREÇÃO APLICADA ---
+    // 1. Converte texto para número decimal para o Mapa de Calor
     lat: parseFloat(posicaoAtual.lat), 
     lng: parseFloat(posicaoAtual.lng),
     
-    // Adicione esta linha abaixo para o Firestore entender como Localização Geográfica
+    // 2. Cria o ponto geográfico que o Google Maps reconhece
     localizacao: new firebase.firestore.GeoPoint(parseFloat(posicaoAtual.lat), parseFloat(posicaoAtual.lng)),
     
-    // Adicione esta linha para a Gerência conseguir filtrar por tempo real
+    // 3. Usa a hora oficial do servidor para evitar erros de relógio no celular
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    // ---------------------
+    // -------------------------
 
     checklist: {
         "APRESENTAÇÃO": document.getElementById('check-apresentacao').checked ? "OK" : "NÃO OK",
