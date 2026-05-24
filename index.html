@@ -40,6 +40,28 @@
         .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
         .check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px; border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; }
         .check-item.ok { border-color: var(--success); color: var(--success); background: rgba(35, 134, 54, 0.2); }
+        /* Une o campo de busca ao select abaixo dele */
+#filtro-posto-ronda {
+    border-bottom: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background: #1e2a44;
+    border-color: var(--accent);
+}
+
+/* Ajusta o select para encaixar perfeitamente no filtro */
+#r-posto {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    margin-top: -1px;
+}
+
+/* Destaque visual quando você clica para digitar */
+#filtro-posto-ronda:focus {
+    outline: none;
+    background: #253454;
+    box-shadow: 0 0 5px var(--accent);
+}
     </style>
 </head>
 <body>
@@ -538,21 +560,32 @@ function preencherCamposPerfil() {
 
 function atualizarSelectPostos() {
     const sel = document.getElementById('r-posto');
-    // Pega o valor digitado no filtro (se existir)
     const filtroInput = document.getElementById('filtro-posto-ronda');
     const termo = filtroInput ? filtroInput.value.toUpperCase() : "";
 
-    sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    // Limpa o select mas mantém a estrutura
+    sel.innerHTML = '';
     
-    // Filtra os postos localmente sem consultar o Firebase
+    // Filtra os postos localmente
     const postosFiltrados = db.postos.filter(p => 
         p.nome.toUpperCase().includes(termo)
     );
 
-    // Renderiza apenas os que coincidem com a busca
+    // Se não houver termo de busca, adiciona o "Selecione..."
+    if (termo === "") {
+        sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    }
+
+    // Renderiza os que coincidem
     postosFiltrados.forEach(p => {
         sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`;
     });
+
+    // Toque de "Instantâneo": Se houver resultados, expande visualmente (opcional)
+    // ou apenas garante que o primeiro da busca já seja o valor atual do select
+    if (postosFiltrados.length > 0 && termo !== "") {
+        sel.value = postosFiltrados[0].nome;
+    }
 }
 
 function gerenciarIntervalo() {
