@@ -107,8 +107,16 @@
             <input type="text" id="filtro-posto-ronda" placeholder="Digite para buscar..." onkeyup="atualizarSelectPostos()">
             <label>Posto / Local Selecionado</label>
             <select id="r-posto"></select>
-            <label>Colaborador no Local</label>
-            <input type="text" id="r-func" placeholder="Nome do colaborador">
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+    <div>
+        <label>Colaborador no Local</label>
+        <input type="text" id="r-func" placeholder="Nome do colaborador">
+    </div>
+    <div>
+        <label>Matrícula</label>
+        <input type="text" id="r-func-mat" placeholder="0000">
+    </div>
+</div>
             <label>Missão</label>
             <select id="r-motivo" onchange="toggleFiscalizacao()">
                 <option value="Fiscalização">Fiscalização</option>
@@ -355,6 +363,7 @@ async function salvarRonda() {
         posto: posto,
         km: document.getElementById('r-km').value || "0",
         colaborador: document.getElementById('r-func').value || "N/A",
+        colaboradorMat: document.getElementById('r-func-mat').value || "N/A",
         motivo: document.getElementById('r-motivo').value,
         obs: document.getElementById('r-obs').value,
         data: new Date().toISOString().split('T')[0],
@@ -418,7 +427,7 @@ function gerarCardIndividual(r) {
     y += 5;
     doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
     y += 5;
-    doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()}`, 5, y);
+    doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()} | MAT: ${r.colaboradorMat || "---"}`, 5, y);
     y += 8;
     doc.setFont("helvetica", "bold");
     doc.text("STATUS OPERACIONAL:", 5, y);
@@ -636,6 +645,7 @@ function limparFormRonda() {
     document.getElementById('r-km').value = "";
     document.getElementById('r-obs').value = "";
     document.getElementById('r-func').value = "";
+    document.getElementById('r-func-mat').value = "";
     fotoBase64 = "";
     document.getElementById('r-foto').value = "";
     document.getElementById('filtro-posto-ronda').value = "";
