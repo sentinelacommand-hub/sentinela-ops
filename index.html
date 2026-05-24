@@ -81,7 +81,9 @@
                 <div><label>VTR</label><input type="text" id="r-placa" readonly></div>
                 <div><label>KM</label><input type="number" id="r-km"></div>
             </div>
-            <label>Posto / Local</label>
+            <label>Filtrar Posto</label>
+            <input type="text" id="filtro-posto-ronda" placeholder="Digite para buscar..." onkeyup="atualizarSelectPostos()">
+            <label>Posto / Local Selecionado</label>
             <select id="r-posto"></select>
             <label>Colaborador no Local</label>
             <input type="text" id="r-func" placeholder="Nome do colaborador">
@@ -536,8 +538,21 @@ function preencherCamposPerfil() {
 
 function atualizarSelectPostos() {
     const sel = document.getElementById('r-posto');
+    // Pega o valor digitado no filtro (se existir)
+    const filtroInput = document.getElementById('filtro-posto-ronda');
+    const termo = filtroInput ? filtroInput.value.toUpperCase() : "";
+
     sel.innerHTML = '<option value="">Selecione o posto...</option>';
-    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
+    
+    // Filtra os postos localmente sem consultar o Firebase
+    const postosFiltrados = db.postos.filter(p => 
+        p.nome.toUpperCase().includes(termo)
+    );
+
+    // Renderiza apenas os que coincidem com a busca
+    postosFiltrados.forEach(p => {
+        sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`;
+    });
 }
 
 function gerenciarIntervalo() {
@@ -590,6 +605,7 @@ function limparFormRonda() {
     document.getElementById('r-func').value = "";
     fotoBase64 = "";
     document.getElementById('r-foto').value = "";
+    document.getElementById('filtro-posto-ronda').value = "";
 }
 
 function gerarRelatorioPlantao() {
