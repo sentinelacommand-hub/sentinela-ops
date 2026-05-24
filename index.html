@@ -100,7 +100,7 @@
             <h3>NOVA ATIVIDADE</h3>
             <button id="btn-intervalo" class="btn btn-info" onclick="gerenciarIntervalo()">☕ INICIAR INTERVALO</button>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
-                <div><label>VTR</label><input type="text" id="r-placa" readonly></div>
+                <div><label>VTR (Editar Placa)</label><input type="text" id="r-placa" placeholder="ABC-1234"></div>
                 <div><label>KM</label><input type="number" id="r-km"></div>
             </div>
             <label>Filtrar Posto</label>
@@ -425,7 +425,9 @@ function gerarCardIndividual(r) {
     doc.setFont("helvetica", "normal");
     doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
     y += 5;
-    doc.text(`VTR: ${db.perfil.placa || "---"} | KM: ${r.km}`, 5, y);
+    // Captura a placa que estava no campo da ronda no momento
+const placaUsada = document.getElementById('r-placa').value || "---";
+doc.text(`VTR: ${placaUsada} | KM: ${r.km}`, 5, y);
     y += 5;
     doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()} | MAT: ${r.colaboradorMat || "---"}`, 5, y);
     y += 8;
