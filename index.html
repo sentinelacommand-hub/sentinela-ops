@@ -278,14 +278,13 @@ async function carregarDadosSincronizados(uid) {
         const postosSnap = await fs.collection("postos").get();
         db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
-        const hoje = new Date().toLocaleDateString('pt-BR');
-        
-        // Filtro estrito baseado na data corrente e status pós-zeramento local
-        db.rondas = rondasSnap.docs
-            .map(doc => doc.data())
-            .filter(r => r.data === hoje && (!db.perfil.ultimoZeramento || r.id > db.perfil.ultimoZeramento));
+       const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
+const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD para consistência
 
+db.rondas = rondasSnap.docs
+    .map(doc => doc.data())
+    .filter(r => r.data === hoje) // Mantém todas as rondas registradas na data de hoje
+    .sort((a, b) => b.id - a.id); // Garante que a mais recente apareça primeiro 
         saveLocal();
         gerenciarMenuAdmin();
         showView('home');
