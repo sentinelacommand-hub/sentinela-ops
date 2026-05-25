@@ -1,807 +1,769 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SENTINELA OPS - CLOUD V2</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SENTINELA OPS - CLOUD V2</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<style>
-:root {
---primary: #0a192f;
---accent: #ffd600; --danger: #f85149;
---success: #238636; --bg: #0f1c2e; --card: #16233a;
---text: #e0e7ff; --text-light: #a3bffa;
-}
-* { box-sizing: border-box; }
-body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 75px; line-height: 1.4; }
-.header { background: var(--primary); color: white; padding: 14px 16px; border-bottom: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; font-weight: bold; }
-.header h1 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1.5px; }
-.container { padding: 12px; max-width: 640px; margin: 0 auto; }
-.card { background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
-.card h3 { margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 3px solid var(--accent); color: var(--accent); font-size: 0.98rem; text-transform: uppercase; font-weight: 700; }
-label { display: block; font-size: 0.76rem; font-weight: 600; color: #94a3b8; margin: 14px 0 5px 0; text-transform: uppercase; }
-input, select, textarea { width: 100%; padding: 13px 14px; background: #1e2a44; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 1rem; }
-.btn { width: 100%; padding: 16px; margin-top: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.96rem; text-transform: uppercase; cursor: pointer; }
-.btn-primary { background: var(--accent); color: #0a192f; }
-.btn-danger { background: var(--danger); color: white; }
-.btn-info { background: #2563eb; color: white; }
-.posto-item { background: #1e2a44; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
-.btn-small { padding: 6px 10px; border-radius: 4px; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; margin-left: 5px; color: white; text-transform: uppercase; }
-.ronda-entry { background: #1e2a44; padding: 13px; border-radius: 6px; margin-bottom: 9px; border-left: 5px solid var(--accent); font-size: 0.87rem; }
-.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); display: flex; border-top: 4px solid var(--accent); z-index: 1000; }
-.nav-item { flex: 1; text-align: center; padding: 10px 6px; color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; cursor: pointer; }
-.nav-item.active { color: var(--accent); }
-.hidden { display: none !important; }
-.checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
-.check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px; border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; }
-.check-item.ok { border-color: var(--success); color: var(--success); background: rgba(35, 134, 54, 0.2); }
-/* Une o campo de busca ao select abaixo dele */
+    <style>
+        :root {
+            --primary: #0a192f;
+            --accent: #ffd600; --danger: #f85149;
+            --success: #238636; --bg: #0f1c2e; --card: #16233a;
+            --text: #e0e7ff; --text-light: #a3bffa;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 75px; line-height: 1.4; }
+        .header { background: var(--primary); color: white; padding: 14px 16px; border-bottom: 4px solid var(--accent); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; font-weight: bold; }
+        .header h1 { margin: 0; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 1.5px; }
+        .container { padding: 12px; max-width: 640px; margin: 0 auto; }
+        .card { background: var(--card); border: 1px solid #334155; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+        .card h3 { margin: 0 0 16px 0; padding-bottom: 10px; border-bottom: 3px solid var(--accent); color: var(--accent); font-size: 0.98rem; text-transform: uppercase; font-weight: 700; }
+        label { display: block; font-size: 0.76rem; font-weight: 600; color: #94a3b8; margin: 14px 0 5px 0; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 13px 14px; background: #1e2a44; border: 1px solid #475569; border-radius: 6px; color: white; font-size: 1rem; }
+        .btn { width: 100%; padding: 16px; margin-top: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.96rem; text-transform: uppercase; cursor: pointer; }
+        .btn-primary { background: var(--accent); color: #0a192f; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: #2563eb; color: white; }
+        .posto-item { background: #1e2a44; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; }
+        .btn-small { padding: 6px 10px; border-radius: 4px; border: none; font-size: 0.7rem; font-weight: bold; cursor: pointer; margin-left: 5px; color: white; text-transform: uppercase; }
+        .ronda-entry { background: #1e2a44; padding: 13px; border-radius: 6px; margin-bottom: 9px; border-left: 5px solid var(--accent); font-size: 0.87rem; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary); display: flex; border-top: 4px solid var(--accent); z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; padding: 10px 6px; color: #94a3b8; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .hidden { display: none !important; }
+        .checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+        .check-item { background: #1e2a44; border: 2px solid #475569; padding: 13px 10px; border-radius: 6px; text-align: center; font-size: 0.79rem; cursor: pointer; }
+        .check-item.ok { border-color: var(--success); color: var(--success); background: rgba(35, 134, 54, 0.2); }
+        /* Une o campo de busca ao select abaixo dele */
 #filtro-posto-ronda {
-border-bottom: none;
-border-bottom-left-radius: 0;
-border-bottom-right-radius: 0;
-background: #1e2a44;
-border-color: var(--accent);
+    border-bottom: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background: #1e2a44;
+    border-color: var(--accent);
 }
 
 /* Ajusta o select para encaixar perfeitamente no filtro */
 #r-posto {
-border-top-left-radius: 0;
-border-top-right-radius: 0;
-margin-top: -1px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    margin-top: -1px;
 }
 
 /* Destaque visual quando você clica para digitar */
 #filtro-posto-ronda:focus {
-outline: none;
-background: #253454;
-box-shadow: 0 0 5px var(--accent);
+    outline: none;
+    background: #253454;
+    box-shadow: 0 0 5px var(--accent);
 }
-</style>
+    </style>
 </head>
 <body>
 
 <div id="view-login" class="container">
-<div style="text-align: center; padding: 50px 0;">
-<h1 style="color: var(--accent); letter-spacing: 3px; margin:0;">SENTINELA OPS</h1>
-<p style="color: #94a3b8; font-size: 0.8rem;">SISTEMA OPERACIONAL EM NUVEM</p>
-</div>
-<div class="card">
-<h3>ACESSO RESTRITO</h3>
-<label>Email Operacional</label>
-<input type="email" id="login-email" placeholder="seu@email.com">
-<label>Senha</label>
-<input type="password" id="login-senha" placeholder="******">
-<button class="btn btn-primary" onclick="login()">ENTRAR</button>
-<button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
-</div>
+    <div style="text-align: center; padding: 50px 0;">
+        <h1 style="color: var(--accent); letter-spacing: 3px; margin:0;">SENTINELA OPS</h1>
+        <p style="color: #94a3b8; font-size: 0.8rem;">SISTEMA OPERACIONAL EM NUVEM</p>
+    </div>
+    <div class="card">
+        <h3>ACESSO RESTRITO</h3>
+        <label>Email Operacional</label>
+        <input type="email" id="login-email" placeholder="seu@email.com">
+        <label>Senha</label>
+        <input type="password" id="login-senha" placeholder="******">
+        <button class="btn btn-primary" onclick="login()">ENTRAR</button>
+        <button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
+    </div>
 </div>
 
 <div id="app-content" class="hidden">
-<div class="header">
-<h1>SENTINELA OPS</h1>
-<div onclick="logout()" style="cursor:pointer; font-size: 1.2rem;">🚪</div>
-</div>
+    <div class="header">
+        <h1>SENTINELA OPS</h1>
+        <div onclick="logout()" style="cursor:pointer; font-size: 1.2rem;">🚪</div>
+    </div>
 
-<div id="view-home" class="container">
-<div class="card" onclick="showView('rondas')" style="cursor:pointer; border-left: 5px solid var(--accent);">📍 <b>REGISTRO DE RONDAS</b></div>
-<div class="card" onclick="showView('postos')" style="cursor:pointer; border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
-<div class="card" onclick="gerarRelatorioPlantao()" style="cursor:pointer; border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
-<div class="card" onclick="showView('perfil')" style="cursor:pointer; border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
-</div>
+    <div id="view-home" class="container">
+        <div class="card" onclick="showView('rondas')" style="cursor:pointer; border-left: 5px solid var(--accent);">📍 <b>REGISTRO DE RONDAS</b></div>
+        <div class="card" onclick="showView('postos')" style="cursor:pointer; border-left: 5px solid #2563eb;">📋 <b>BASE DE POSTOS / ROTAS</b></div>
+        <div class="card" onclick="gerarRelatorioPlantao()" style="cursor:pointer; border-left: 5px solid var(--success);">📄 <b>RELATÓRIO DE PLANTÃO (PDF)</b></div>
+        <div class="card" onclick="showView('perfil')" style="cursor:pointer; border-left: 5px solid #94a3b8;">👤 <b>MEU PERFIL</b></div>
+    </div>
 
-<div id="view-rondas" class="container hidden">
-<div class="card">
-<h3>NOVA ATIVIDADE</h3>
-<button id="btn-intervalo" class="btn btn-info" onclick="gerenciarIntervalo()">☕ INICIAR INTERVALO</button>
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
-<div><label>VTR (Editar Placa)</label><input type="text" id="r-placa" placeholder="ABC-1234"></div>
-<div><label>KM</label><input type="number" id="r-km"></div>
+    <div id="view-rondas" class="container hidden">
+        <div class="card">
+            <h3>NOVA ATIVIDADE</h3>
+            <button id="btn-intervalo" class="btn btn-info" onclick="gerenciarIntervalo()">☕ INICIAR INTERVALO</button>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:10px;">
+                <div><label>VTR (Editar Placa)</label><input type="text" id="r-placa" placeholder="ABC-1234"></div>
+                <div><label>KM</label><input type="number" id="r-km"></div>
+            </div>
+            <label>Filtrar Posto</label>
+            <input type="text" id="filtro-posto-ronda" placeholder="Digite para buscar..." onkeyup="atualizarSelectPostos()">
+            <label>Posto / Local Selecionado</label>
+            <select id="r-posto"></select>
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+    <div>
+        <label>Colaborador no Local</label>
+        <input type="text" id="r-func" placeholder="Nome do colaborador">
+    </div>
+    <div>
+        <label>Matrícula</label>
+        <input type="text" id="r-func-mat" placeholder="0000">
+    </div>
 </div>
-<label>Filtrar Posto</label>
-<input type="text" id="filtro-posto-ronda" placeholder="Digite para buscar..." onkeyup="atualizarSelectPostos()">
-<label>Posto / Local Selecionado</label>
-<select id="r-posto"></select>
-<div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
-<div>
-<label>Colaborador no Local</label>
-<input type="text" id="r-func" placeholder="Nome do colaborador">
-</div>
-<div>
-<label>Matrícula</label>
-<input type="text" id="r-func-mat" placeholder="0000">
-</div>
-</div>
-<label>Missão</label>
-<select id="r-motivo" onchange="toggleFiscalizacao()">
-<option value="Fiscalização">Fiscalização</option>
-<option value="De base">De base</option>
-<option value="Complemento">Complemento</option>
-<option value="Cobertura">Cobertura</option>
-<option value="Entrega de material">Entrega de material</option>
-<option value="Deslocamento">Deslocamento</option>
-<option value="Outros">Outros</option>
-</select>
-<div id="sec-fiscalizacao">
-<label>CHECKLIST TÁTICO</label>
-<div class="checklist-grid" id="checklist">
-<div class="check-item ok" onclick="toggleCheck(this)">APRESENTAÇÃO</div>
-<div class="check-item ok" onclick="toggleCheck(this)">UNIFORME</div>
-<div class="check-item ok" onclick="toggleCheck(this)">POSTURA</div>
-<div class="check-item ok" onclick="toggleCheck(this)">LIVRO OCO.</div>
-<div class="check-item ok" onclick="toggleCheck(this)">MATERIAL</div>
-<div class="check-item ok" onclick="toggleCheck(this)">OUTROS</div>
-</div>
-</div>
-<label>Observações</label>
-<textarea id="r-obs" rows="3" placeholder="Algo fora do normal?"></textarea>
-<label>Foto de Comprovação</label>
-<input type="file" id="r-foto" accept="image/*" capture="environment" onchange="previewImage(this)">
-<button class="btn btn-primary" onclick="salvarRonda()">✅ FINALIZAR E GERAR CARD</button>
-</div>
-<div class="card">
-<h3>LOG DE ATIVIDADES (HOJE)</h3>
-<div id="historico-rondas"></div>
-</div>
-</div>
+            <label>Missão</label>
+            <select id="r-motivo" onchange="toggleFiscalizacao()">
+                <option value="Fiscalização">Fiscalização</option>
+                <option value="De base">De base</option>
+                <option value="Complemento">Complemento</option>
+                <option value="Cobertura">Cobertura</option>
+                <option value="Entrega de material">Entrega de material</option>
+                <option value="Deslocamento">Deslocamento</option>
+                <option value="Outros">Outros</option>
+            </select>
+            <div id="sec-fiscalizacao">
+                <label>CHECKLIST TÁTICO</label>
+                <div class="checklist-grid" id="checklist">
+                    <div class="check-item ok" onclick="toggleCheck(this)">APRESENTAÇÃO</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">UNIFORME</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">POSTURA</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">LIVRO OCO.</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">MATERIAL</div>
+                    <div class="check-item ok" onclick="toggleCheck(this)">OUTROS</div>
+                </div>
+            </div>
+            <label>Observações</label>
+            <textarea id="r-obs" rows="3" placeholder="Algo fora do normal?"></textarea>
+            <label>Foto de Comprovação</label>
+            <input type="file" id="r-foto" accept="image/*" capture="environment" onchange="previewImage(this)">
+            <button class="btn btn-primary" onclick="salvarRonda()">✅ FINALIZAR E GERAR CARD</button>
+        </div>
+        <div class="card">
+            <h3>LOG DE ATIVIDADES (HOJE)</h3>
+            <div id="historico-rondas"></div>
+        </div>
+    </div>
 
-<div id="view-postos" class="container hidden">
-<div class="card">
-<h3>GERENCIAR POSTOS</h3>
-<button class="btn btn-primary" onclick="adicionarPosto()">➕ NOVO POSTO</button>
-<button class="btn btn-danger" onclick="zerarRondasPlantao()">🧹 ZERAR RONDAS / INICIAR NOVO PLANTÃO</button>
-<input type="text" id="busca-posto" placeholder="Filtrar postos..." onkeyup="renderPostos()" style="margin-top:15px;">
-<div id="lista-postos" style="margin-top:15px;"></div>
-</div>
-</div>
+    <div id="view-postos" class="container hidden">
+        <div class="card">
+            <h3>GERENCIAR POSTOS</h3>
+            <button class="btn btn-primary" onclick="adicionarPosto()">➕ NOVO POSTO</button>
+            <button class="btn btn-danger" onclick="zerarRondasPlantao()">🧹 ZERAR RONDAS / INICIAR NOVO PLANTÃO</button>
+            <input type="text" id="busca-posto" placeholder="Filtrar postos..." onkeyup="renderPostos()" style="margin-top:15px;">
+            <div id="lista-postos" style="margin-top:15px;"></div>
+        </div>
+    </div>
 
-<div id="view-perfil" class="container hidden">
-<div class="card">
-<h3>DADOS DO OPERADOR</h3>
-<label>Nome Completo</label><input type="text" id="p-nome">
-<label>Matrícula</label><input type="text" id="p-matrícula">
-<label>Cargo</label><input type="text" id="p-cargo">
-<label>Viatura (Placa)</label><input type="text" id="p-placa">
-<label>Empresa</label><input type="text" id="p-empresa">
-<label>CNPJ</label><input type="text" id="p-cnpj">
-<button class="btn btn-primary" onclick="salvarPerfil()">SALVAR NO CLOUD</button>
-</div>
-</div>
-<div id="view-admin" class="container hidden">
-<div class="card">
-<h3>LANÇAMENTO RETROATIVO / GESTÃO</h3>
-<p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px;">Lance rondas em nome de qualquer operador. O sistema processará como uma atividade real.</p>
+    <div id="view-perfil" class="container hidden">
+        <div class="card">
+            <h3>DADOS DO OPERADOR</h3>
+            <label>Nome Completo</label><input type="text" id="p-nome">
+            <label>Matrícula</label><input type="text" id="p-matrícula">
+            <label>Cargo</label><input type="text" id="p-cargo">
+            <label>Viatura (Placa)</label><input type="text" id="p-placa">
+            <label>Empresa</label><input type="text" id="p-empresa">
+            <label>CNPJ</label><input type="text" id="p-cnpj">
+            <button class="btn btn-primary" onclick="salvarPerfil()">SALVAR NO CLOUD</button>
+        </div>
+    </div>
+    <div id="view-admin" class="container hidden">
+        <div class="card">
+            <h3>LANÇAMENTO RETROATIVO / GESTÃO</h3>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-top: -10px;">Lance rondas em nome de qualquer operador. O sistema processará como uma atividade real.</p>
+            
+            <label>1. SELECIONE O OPERADOR *</label>
+            <select id="adm-usuario" onchange="atualizarVtrAdmin()"></select>
 
-<label>1. SELECIONE O OPERADOR *</label>
-<select id="adm-usuario" onchange="atualizarVtrAdmin()"></select>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                    <label>VTR (Placa)</label>
+                    <input type="text" id="adm-placa" readonly style="opacity: 0.7;">
+                </div>
+                <div>
+                    <label>KM Atual</label>
+                    <input type="number" id="adm-km">
+                </div>
+            </div>
 
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-<div>
-<label>VTR (Placa)</label>
-<input type="text" id="adm-placa" readonly style="opacity: 0.7;">
-</div>
-<div>
-<label>KM Atual</label>
-<input type="number" id="adm-km">
-</div>
-</div>
+            <label>2. POSTO / LOCAL *</label>
+            <select id="adm-posto"></select>
 
-<label>2. POSTO / LOCAL *</label>
-<select id="adm-posto"></select>
+            <label>Colaborador no Local</label>
+            <input type="text" id="adm-func" placeholder="Nome do colaborador">
 
-<label>Colaborador no Local</label>
-<input type="text" id="adm-func" placeholder="Nome do colaborador">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                    <label>Data da Ronda</label>
+                    <input type="date" id="adm-data">
+                </div>
+                <div>
+                    <label>Hora da Ronda</label>
+                    <input type="time" id="adm-hora">
+                </div>
+            </div>
 
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-<div>
-<label>Data da Ronda</label>
-<input type="date" id="adm-data">
-</div>
-<div>
-<label>Hora da Ronda</label>
-<input type="time" id="adm-hora">
-</div>
-</div>
+            <label>Missão</label>
+            <select id="adm-motivo">
+                <option value="Fiscalização">Fiscalização</option>
+                <option value="De base">De base</option>
+                <option value="Complemento">Complemento</option>
+                <option value="Cobertura">Cobertura</option>
+                <option value="Entrega de material">Entrega de material</option>
+                <option value="Deslocamento">Deslocamento</option>
+                <option value="Outros">Outros</option>
+            </select>
 
-<label>Missão</label>
-<select id="adm-motivo">
-<option value="Fiscalização">Fiscalização</option>
-<option value="De base">De base</option>
-<option value="Complemento">Complemento</option>
-<option value="Cobertura">Cobertura</option>
-<option value="Entrega de material">Entrega de material</option>
-<option value="Deslocamento">Deslocamento</option>
-<option value="Outros">Outros</option>
-</select>
+            <label>Observações</label>
+            <textarea id="adm-obs" rows="3" placeholder="Observações do lançamento administrativo..."></textarea>
 
-<label>Observações</label>
-<textarea id="adm-obs" rows="3" placeholder="Observações do lançamento administrativo..."></textarea>
+            <button class="btn btn-primary" onclick="salvarRondaComoAdmin()" style="background: #2563eb; color: white;">⚡ LANÇAR RONDA OFICIAL</button>
+        </div>
+    </div>
 
-<button class="btn btn-primary" onclick="salvarRondaComoAdmin()" style="background: #2563eb; color: white;">⚡ LANÇAR RONDA OFICIAL</button>
-</div>
-</div>
-
-<div id="view-solicitacoes" class="container hidden">
-<div class="card">
-<h3>SOLICITAÇÕES DE MATERIAL</h3>
-<label>Posto</label>
-<select id="sol-posto"></select>
-<label>Colaborador</label>
-<input type="text" id="sol-func" placeholder="Nome">
-<label>Matrícula</label>
-<input type="text" id="sol-mat" placeholder="0000">
-<label>Pedido (Uniforme/Material)</label>
-<textarea id="sol-obs" rows="3"></textarea>
-<button class="btn btn-primary" onclick="salvarSolicitacao()">SALVAR SOLICITAÇÃO</button>
-</div>
-<div class="card">
-<h3>PENDÊNCIAS</h3>
-<div id="lista-solicitacoes"></div>
-</div>
-</div>
-
-
-
-<nav class="nav-bar">
-<div class="nav-item active" id="nav-home" onclick="showView('home')">🏠 HOME</div>
-<div class="nav-item" id="nav-rondas" onclick="showView('rondas')">📍 RONDAS</div>
-<div class="nav-item" id="nav-postos" onclick="showView('postos')">📋 POSTOS</div>
-<div class="nav-item hidden" id="nav-admin"
-<div class="nav-item" id="nav-solicitacoes" onclick="showView('solicitacoes')">SOLICITAÇÕES</div>
-onclick="showView('admin')">⚙️ ADMIN</div>
-<div class="nav-item" id="nav-perfil" onclick="showView('perfil')">👤 PERFIL</div>
-</nav>
+    <nav class="nav-bar">
+        <div class="nav-item active" id="nav-home" onclick="showView('home')">🏠 HOME</div>
+        <div class="nav-item" id="nav-rondas" onclick="showView('rondas')">📍 RONDAS</div>
+        <div class="nav-item" id="nav-postos" onclick="showView('postos')">📋 POSTOS</div>
+        <div class="nav-item hidden" id="nav-admin" onclick="showView('admin')">⚙️ ADMIN</div>
+        <div class="nav-item" id="nav-perfil" onclick="showView('perfil')">👤 PERFIL</div>
+    </nav>
 </div>
 
 <script>
 // --- CONFIG FIREBASE ---
 const firebaseConfig = {
-apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
-authDomain: "sentinela-ops-profissional.firebaseapp.com",
-projectId: "sentinela-ops-profissional",
-storageBucket: "sentinela-ops-profissional.firebasestorage.app",
-messagingSenderId: "458111218365",
-appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
+    apiKey: "AIzaSyBL4Nka91iGIAWSTfvAmsqDHCj2KMhWZ70",
+    authDomain: "sentinela-ops-profissional.firebaseapp.com",
+    projectId: "sentinela-ops-profissional",
+    storageBucket: "sentinela-ops-profissional.firebasestorage.app",
+    messagingSenderId: "458111218365",
+    appId: "1:458111218365:web:0f3b41ab7c2ceb7feebdd4"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const fs = firebase.firestore();
 
-let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], solicitacoes: [], intervaloAtivo: null };
-
+let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
 let fotoBase64 = "";
 let listaUsuariosAdmin = [];
 
 function gerenciarMenuAdmin() {
-const navAdmin = document.getElementById('nav-admin');
-if (navAdmin) {
-if (isAdmin()) {
-navAdmin.classList.remove('hidden');
-} else {
-navAdmin.classList.add('hidden');
-}
-}
+    const navAdmin = document.getElementById('nav-admin');
+    if (navAdmin) {
+        if (isAdmin()) {
+            navAdmin.classList.remove('hidden');
+        } else {
+            navAdmin.classList.add('hidden');
+        }
+    }
 }
 
 // CORREÇÃO: Função de escuta e sincronização temporal revisada
 async function carregarDadosSincronizados(uid) {
-try {
-const userDoc = await fs.collection("usuarios").doc(uid).get();
-if (userDoc.exists) {
-db.perfil = userDoc.data();
-} else {
-db.perfil = { nome: auth.currentUser.email, role: "operador" };
-}
+    try {
+        const userDoc = await fs.collection("usuarios").doc(uid).get();
+        if (userDoc.exists) {
+            db.perfil = userDoc.data();
+        } else {
+            db.perfil = { nome: auth.currentUser.email, role: "operador" };
+        }
+        
+        const postosSnap = await fs.collection("postos").get();
+        db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-const postosSnap = await fs.collection("postos").get();
-db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
+       const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
 const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD para consistência
 
 db.rondas = rondasSnap.docs
-.map(doc => doc.data())
-.filter(r => r.data === hoje) // Mantém todas as rondas registradas na data de hoje
-.sort((a, b) => b.id - a.id); // Garante que a mais recente apareça primeiro
-saveLocal();
-gerenciarMenuAdmin();
-showView('home');
-} catch (e) {
-console.error("Erro na sincronização inicial:", e);
-gerenciarMenuAdmin();
-}
+    .map(doc => doc.data())
+    .filter(r => r.data === hoje) // Mantém todas as rondas registradas na data de hoje
+    .sort((a, b) => b.id - a.id); // Garante que a mais recente apareça primeiro 
+        saveLocal();
+        gerenciarMenuAdmin();
+        showView('home');
+    } catch (e) {
+        console.error("Erro na sincronização inicial:", e);
+        gerenciarMenuAdmin();
+    }
 }
 
 function isAdmin() {
-return db.perfil && db.perfil.role === "admin";
+    return db.perfil && db.perfil.role === "admin";
 }
 
 auth.onAuthStateChanged(user => {
-if (user) {
-document.getElementById('view-login').classList.add('hidden');
-document.getElementById('app-content').classList.remove('hidden');
-carregarDadosSincronizados(user.uid);
-} else {
-document.getElementById('view-login').classList.remove('hidden');
-document.getElementById('app-content').classList.add('hidden');
-}
+    if (user) {
+        document.getElementById('view-login').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+        carregarDadosSincronizados(user.uid);
+    } else {
+        document.getElementById('view-login').classList.remove('hidden');
+        document.getElementById('app-content').classList.add('hidden');
+    }
 });
 
 function login() {
-const e = document.getElementById('login-email').value;
-const s = document.getElementById('login-senha').value;
-if(!e || !s) return alert("Preencha os campos!");
-auth.signInWithEmailAndPassword(e, s).catch(err => alert("Erro: " + err.message));
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+    if(!e || !s) return alert("Preencha os campos!");
+    auth.signInWithEmailAndPassword(e, s).catch(err => alert("Erro: " + err.message));
 }
 
 function cadastrar() {
-const e = document.getElementById('login-email').value;
-const s = document.getElementById('login-senha').value;
-auth.createUserWithEmailAndPassword(e, s).then(() => alert("Conta criada!")).catch(err => alert(err.message));
+    const e = document.getElementById('login-email').value;
+    const s = document.getElementById('login-senha').value;
+    auth.createUserWithEmailAndPassword(e, s).then(() => alert("Conta criada!")).catch(err => alert(err.message));
 }
 
 function logout() { auth.signOut(); }
 function saveLocal() { localStorage.setItem('sentinela_ops_db', JSON.stringify(db)); }
 
 function showView(v) {
-document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-document.getElementById('view-' + v).classList.remove('hidden');
-document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-document.getElementById('nav-' + v).classList.add('active');
-gerenciarMenuAdmin();
-if (v === 'rondas') {
-document.getElementById('r-placa').value = db.perfil.placa || "N/A";
-atualizarSelectPostos();
-renderRondas();
-}
-if (v === 'perfil') preencherCamposPerfil();
-if (v === 'postos') renderPostos();
-if (v === 'solicitacoes') {
-renderSolicitacoes(); // Isso força a lista a aparecer ao clicar na aba }
-if (v === 'admin') {
-if (!isAdmin()) {
-alert("Acesso restrito a Administradores.");
-showView('home');
-return;
-}
-carregarUsuariosParaAdmin();
-atualizarSelectPostosAdmin();
-document.getElementById('adm-data').value = new Date().toISOString().split('T')[0];
-document.getElementById('adm-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-}
+    document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
+    document.getElementById('view-' + v).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('nav-' + v).classList.add('active');
+    gerenciarMenuAdmin();
+    if (v === 'rondas') {
+        document.getElementById('r-placa').value = db.perfil.placa || "N/A";
+        atualizarSelectPostos();
+        renderRondas();
+    }
+    if (v === 'perfil') preencherCamposPerfil();
+    if (v === 'postos') renderPostos();
+    if (v === 'admin') {
+        if (!isAdmin()) {
+            alert("Acesso restrito a Administradores.");
+            showView('home');
+            return;
+        }
+        carregarUsuariosParaAdmin();
+        atualizarSelectPostosAdmin();
+        document.getElementById('adm-data').value = new Date().toISOString().split('T')[0];
+        document.getElementById('adm-hora').value = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+    }
 }
 
 // CORREÇÃO: Injeção do serverTimestamp remoto protegendo a persistência local
 async function salvarRonda() {
-const posto = document.getElementById('r-posto').value;
-if(!posto) return alert("Selecione um posto!");
+    const posto = document.getElementById('r-posto').value;
+    if(!posto) return alert("Selecione um posto!");
 
-const novaRonda = {
-id: Date.now(),
-uid: auth.currentUser.uid,
-posto: posto,
-km: document.getElementById('r-km').value || "0",
-colaborador: document.getElementById('r-func').value || "N/A",
-colaboradorMat: document.getElementById('r-func-mat').value || "N/A",
-motivo: document.getElementById('r-motivo').value,
-obs: document.getElementById('r-obs').value,
-data: new Date().toISOString().split('T')[0],
-hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
-foto: fotoBase64,
-checklist: {
-"APRESENTAÇÃO": document.querySelectorAll('.check-item')[0].classList.contains('ok') ? "OK" : "REPROVADO",
-"UNIFORME": document.querySelectorAll('.check-item')[1].classList.contains('ok') ? "OK" : "REPROVADO",
-"POSTURA": document.querySelectorAll('.check-item')[2].classList.contains('ok') ? "OK" : "REPROVADO",
-"LIVRO OCO.": document.querySelectorAll('.check-item')[3].classList.contains('ok') ? "OK" : "REPROVADO",
-"MATERIAL": document.querySelectorAll('.check-item')[4].classList.contains('ok') ? "OK" : "REPROVADO",
-"OUTROS": document.querySelectorAll('.check-item')[5].classList.contains('ok') ? "OK" : "REPROVADO"
-}
-};
+    const novaRonda = {
+        id: Date.now(),
+        uid: auth.currentUser.uid,
+        posto: posto,
+        km: document.getElementById('r-km').value || "0",
+        colaborador: document.getElementById('r-func').value || "N/A",
+        colaboradorMat: document.getElementById('r-func-mat').value || "N/A",
+        motivo: document.getElementById('r-motivo').value,
+        obs: document.getElementById('r-obs').value,
+        data: new Date().toISOString().split('T')[0],
+        hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+        foto: fotoBase64,
+        checklist: {
+            "APRESENTAÇÃO": document.querySelectorAll('.check-item')[0].classList.contains('ok') ? "OK" : "REPROVADO",
+            "UNIFORME": document.querySelectorAll('.check-item')[1].classList.contains('ok') ? "OK" : "REPROVADO",
+            "POSTURA": document.querySelectorAll('.check-item')[2].classList.contains('ok') ? "OK" : "REPROVADO",
+            "LIVRO OCO.": document.querySelectorAll('.check-item')[3].classList.contains('ok') ? "OK" : "REPROVADO",
+            "MATERIAL": document.querySelectorAll('.check-item')[4].classList.contains('ok') ? "OK" : "REPROVADO",
+            "OUTROS": document.querySelectorAll('.check-item')[5].classList.contains('ok') ? "OK" : "REPROVADO"
+        }
+    };
 
-try {
-await fs.collection("rondas").add({
-...novaRonda,
-timestamp: firebase.firestore.FieldValue.serverTimestamp()
-});
-db.rondas.unshift(novaRonda);
-saveLocal();
-renderRondas();
-limparFormRonda();
-// --- FUNÇÕES DA NOVA VIEW DE SOLICITAÇÕES ---
-
-// 1. Salvar a solicitação no Firestore e no DB local
-async function salvarSolicitacao() {
-const posto = document.getElementById('sol-posto').value;
-const func = document.getElementById('sol-func').value;
-const mat = document.getElementById('sol-mat').value;
-const pedido = document.getElementById('sol-obs').value;
-
-if(!posto || !func) return alert("Preencha o Posto e o Nome do colaborador!");
-
-const novaSolicitacao = {
-id: Date.now(),
-posto: posto,
-colaborador: func,
-matricula: mat,
-pedido: pedido,
-status: "Pendente"
-};
-
-try {
-await fs.collection("solicitacoes").add(novaSolicitacao); // Salva na nuvem
-db.solicitacoes.unshift(novaSolicitacao); // Adiciona na lista local
-saveLocal(); // Salva no navegador
-renderSolicitacoes(); // Atualiza a lista na tela
-document.getElementById('sol-obs').value = ""; // Limpa o campo
-alert("Solicitação registrada!");
-} catch(e) {
-alert("Erro ao salvar: " + e.message);
-}
-}
-
-// 2. Exibir a lista na tela
-function renderSolicitacoes() {
-const container = document.getElementById('lista-solicitacoes');
-container.innerHTML = db.solicitacoes.map((s, index) => &lt;div class="card"&gt; &lt;b&gt;${s.colaborador}</b> | ${s.posto}&lt;br&gt; &lt;small&gt;Pedido: ${s.pedido}</small><br>
-<button class="btn-small" style="background:var(--success)" onclick="alert('Funcionalidade de entrega aqui')">ENTREGUE</button>
-<button class="btn-small" style="background:var(--danger)" onclick="excluirSolicitacao(${index})"&gt;EXCLUIR&lt;/button&gt; &lt;/div&gt;).join('');
-}
-
-// 3. Remover solicitação
-function excluirSolicitacao(index) {
-if(confirm("Deseja excluir esta solicitação?")) {
-db.solicitacoes.splice(index, 1);
-saveLocal();
-renderSolicitacoes();
-}
-}
-
-
-alert("✅ Ronda salva com sucesso!");
-} catch(e) {
-alert("Erro ao salvar ronda: " + e.message);
-}
+    try {
+        await fs.collection("rondas").add({
+            ...novaRonda,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        db.rondas.unshift(novaRonda);
+        saveLocal();
+        renderRondas();
+        limparFormRonda();
+        alert("✅ Ronda salva com sucesso!");
+    } catch(e) {
+        alert("Erro ao salvar ronda: " + e.message);
+    }
 }
 
 function renderRondas() {
-const container = document.getElementById('historico-rondas');
-container.innerHTML = db.rondas.map((r) => &lt;div class="ronda-entry"&gt; &lt;div style="display:flex; justify-content:space-between; align-items:center;"&gt; &lt;div&gt; &lt;strong&gt;${r.hora}</strong> - ${r.posto}&lt;br&gt; &lt;small&gt;${r.motivo} | KM: ${r.km}&lt;/small&gt; &lt;/div&gt; &lt;button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button> </div>
-`).join('');
+    const container = document.getElementById('historico-rondas');
+    container.innerHTML = db.rondas.map((r) => `
+        <div class="ronda-entry">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong>${r.hora}</strong> - ${r.posto}<br>
+                    <small>${r.motivo} | KM: ${r.km}</small>
+                </div>
+                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>        </div>
+    `).join('');
 }
 
 function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
 
 function gerarCardIndividual(r) {
-const { jsPDF } = window.jspdf;
-const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
-let y = 10;
-doc.setFontSize(10);
-doc.setFont("helvetica", "bold");
-doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
-y += 7;
-if (r.foto) { try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; } }
-doc.setFontSize(11);
-doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
-y += 7;
-doc.setFontSize(8);
-doc.setFont("helvetica", "normal");
-doc.text(Data:${r.data} | Hora:  {placaUsada} | KM:  {r.colaborador.toUpperCase()} | MAT: latex
-{r.colaboradorMat || "---"}`, 5, y); y += 8; doc.setFont("helvetica", "bold"); doc.text("STATUS OPERACIONAL:", 5, y); doc.setFontSize(7); doc.setFont("helvetica", "normal"); Object.entries(r.checklist || {}).forEach(([item, status]) =&gt; { y += 4; doc.text(`• 
-
-{item}: latex
-{status}`, 8, y); }); y += 8; doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.text("OBSERVAÇÕES:", 5, y); doc.setFont("helvetica", "normal"); const obs = doc.splitTextToSize(r.obs, 70); doc.text(obs, 5, y + 5); y += (obs.length * 5) + 15; doc.setFont("helvetica", "bold"); doc.text(`
-
-{(db.perfil.cargo || "Supervisor").toUpperCase()}:, 5, y); y += 5; doc.setFont("helvetica", "normal"); doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y); doc.save(Card_latex
-{r.posto}_
-
-{r.hora.replace(':','-')}.pdf`);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
+    let y = 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("COMPROVANTE DE VISITA", 40, y, { align: "center" });
+    y += 7;
+    if (r.foto) { try { doc.addImage(r.foto, 'JPEG', 5, y, 70, 45); y += 50; } catch (e) { y += 5; } }
+    doc.setFontSize(11);
+    doc.text(r.posto.toUpperCase(), 40, y, { align: "center" });
+    y += 7;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
+    y += 5;
+    // Captura a placa que estava no campo da ronda no momento
+const placaUsada = document.getElementById('r-placa').value || "---";
+doc.text(`VTR: ${placaUsada} | KM: ${r.km}`, 5, y);
+    y += 5;
+    doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()} | MAT: ${r.colaboradorMat || "---"}`, 5, y);
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("STATUS OPERACIONAL:", 5, y);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    Object.entries(r.checklist || {}).forEach(([item, status]) => {
+        y += 4;
+        doc.text(`• ${item}: ${status}`, 8, y);
+    });
+    y += 8;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("OBSERVAÇÕES:", 5, y);
+    doc.setFont("helvetica", "normal");
+    const obs = doc.splitTextToSize(r.obs, 70);
+    doc.text(obs, 5, y + 5);
+    y += (obs.length * 5) + 15;
+    doc.setFont("helvetica", "bold");
+    doc.text(`${(db.perfil.cargo || "Supervisor").toUpperCase()}:`, 5, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.text((db.perfil.nome || "N/A").toUpperCase(), 5, y);
+    doc.save(`Card_${r.posto}_${r.hora.replace(':','-')}.pdf`);
 }
 
 async function adicionarPosto() {
-if (!isAdmin()) return alert("Acesso negado: apenas administradores podem gerenciar postos.");
-const nome = prompt("Nome do Posto:");
-if(!nome) return;
-const endereco = prompt("Endereço:");
-const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
-const docRef = await fs.collection("postos").add(novoPosto);
-db.postos.push({ id: docRef.id, ...novoPosto });
-saveLocal();
-renderPostos();
+    if (!isAdmin()) return alert("Acesso negado: apenas administradores podem gerenciar postos.");
+    const nome = prompt("Nome do Posto:");
+    if(!nome) return;
+    const endereco = prompt("Endereço:");
+    const novoPosto = { nome: nome.toUpperCase(), endereco: endereco || "Sem endereço", uid: auth.currentUser.uid };
+    const docRef = await fs.collection("postos").add(novoPosto);
+    db.postos.push({ id: docRef.id, ...novoPosto });
+    saveLocal();
+    renderPostos();
 }
 
 function renderPostos() {
-const busca = document.getElementById('busca-posto').value.toUpperCase();
-const container = document.getElementById('lista-postos');
-const btnNovoPosto = document.querySelector('button[onclick="adicionarPosto()"]');
-if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
-const filtrados = db.postos.filter(p => p.nome.includes(busca));
-container.innerHTML = filtrados.map((p, i) => &lt;div class="posto-item"&gt; &lt;div style="flex:1;"&gt; &lt;b&gt;${p.nome}</b><br><small>${p.endereco}&lt;/small&gt; &lt;/div&gt; &lt;div style="display:flex;"&gt; &lt;button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
-${isAdmin() ?
-<button onclick="editarPosto(' {db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
-<button onclick="excluirPosto(' {db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
-: ""} &lt;/div&gt; &lt;/div&gt;).join('');
+    const busca = document.getElementById('busca-posto').value.toUpperCase();
+    const container = document.getElementById('lista-postos');
+    const btnNovoPosto = document.querySelector('button[onclick="adicionarPosto()"]');
+    if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
+    const filtrados = db.postos.filter(p => p.nome.includes(busca));
+    container.innerHTML = filtrados.map((p, i) => `
+        <div class="posto-item">
+            <div style="flex:1;">
+                <b>${p.nome}</b><br><small>${p.endereco}</small>
+            </div>
+            <div style="display:flex;">
+                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
+                ${isAdmin() ? `
+                    <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
+                    <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
+                ` : ""}
+            </div>
+        </div>
+    `).join('');
 }
 
 async function editarPosto(id, index) {
-if (!isAdmin()) return alert("Acesso negado.");
-const posto = db.postos[index];
-const novoNome = prompt("Editar nome do Posto:", posto.nome);
-const novoEndereco = prompt("Editar endereço:", posto.endereco);
-if (novoNome) {
-const dadosAtualizados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
-if(id) await fs.collection("postos").doc(id).update(dadosAtualizados);
-db.postos[index] = { ...posto, ...dadosAtualizados };
-saveLocal();
-renderPostos();
-}
+    if (!isAdmin()) return alert("Acesso negado.");
+    const posto = db.postos[index];
+    const novoNome = prompt("Editar nome do Posto:", posto.nome);
+    const novoEndereco = prompt("Editar endereço:", posto.endereco);
+    if (novoNome) {
+        const dadosAtualizados = { nome: novoNome.toUpperCase(), endereco: novoEndereco || "Sem endereço" };
+        if(id) await fs.collection("postos").doc(id).update(dadosAtualizados);
+        db.postos[index] = { ...posto, ...dadosAtualizados };
+        saveLocal();
+        renderPostos();
+    }
 }
 
 async function excluirPosto(id, index) {
-if (!isAdmin()) return alert("Acesso negado.");
-if(!confirm("Excluir posto?")) return;
-if(id) await fs.collection("postos").doc(id).delete();
-db.postos.splice(index, 1);
-saveLocal();
-renderPostos();
+    if (!isAdmin()) return alert("Acesso negado.");
+    if(!confirm("Excluir posto?")) return;
+    if(id) await fs.collection("postos").doc(id).delete();
+    db.postos.splice(index, 1);
+    saveLocal();
+    renderPostos();
 }
 
 async function zerarRondasPlantao() {
-if (!auth.currentUser) return alert("Usuário não autenticado.");
-const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá ocultar as rondas locais do seu dispositivo para iniciar uma nova jornada de trabalho.\n\nOs registros remotos salvos na nuvem continuarão intactos para auditoria da gerência.\n\nDeseja continuar?");
-if (!confirmar) return;
-try {
-const agora = Date.now();
-db.perfil.ultimoZeramento = agora;
-await fs.collection("usuarios").doc(auth.currentUser.uid).set({ ultimoZeramento: agora }, { merge: true });
-limparDadosLocaisRondas();
-renderRondas();
-alert("✅ Rondas zeradas com sucesso! Novo plantão iniciado.");
-} catch (e) {
-alert("Erro ao zerar rondas: " + e.message);
-}
+    if (!auth.currentUser) return alert("Usuário não autenticado.");
+    const confirmar = confirm("ATENÇÃO!\n\nEsta ação irá ocultar as rondas locais do seu dispositivo para iniciar uma nova jornada de trabalho.\n\nOs registros remotos salvos na nuvem continuarão intactos para auditoria da gerência.\n\nDeseja continuar?");
+    if (!confirmar) return;
+    try {
+        const agora = Date.now();
+        db.perfil.ultimoZeramento = agora;
+        await fs.collection("usuarios").doc(auth.currentUser.uid).set({ ultimoZeramento: agora }, { merge: true });
+        limparDadosLocaisRondas();
+        renderRondas();
+        alert("✅ Rondas zeradas com sucesso! Novo plantão iniciado.");
+    } catch (e) { 
+        alert("Erro ao zerar rondas: " + e.message);
+    }
 }
 
 async function excluirRondasFirebaseUsuario(uid) {
-while (true) {
-const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
-if (snap.empty) break;
-const batch = fs.batch();
-snap.forEach(doc => batch.delete(doc.ref));
-await batch.commit();
-if (snap.size < 450) break;
-}
+    while (true) {
+        const snap = await fs.collection("rondas").where("uid", "==", uid).limit(450).get();
+        if (snap.empty) break;
+        const batch = fs.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        if (snap.size < 450) break;
+    }
 }
 
 function limparDadosLocaisRondas() {
-db.rondas = [];
-saveLocal();
+    db.rondas = [];
+    saveLocal();
 }
 
 async function salvarPerfil() {
-const p = {
-nome: document.getElementById('p-nome').value,
-matricula: document.getElementById('p-matrícula').value,
-cargo: document.getElementById('p-cargo').value,
-placa: document.getElementById('p-placa').value.toUpperCase(),
-empresa: document.getElementById('p-empresa').value,
-cnpj: document.getElementById('p-cnpj').value
-};
-db.perfil = { ...db.perfil, ...p };
-saveLocal();
-await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true });
-alert("✅ Perfil salvo!");
+    const p = {
+        nome: document.getElementById('p-nome').value,
+        matricula: document.getElementById('p-matrícula').value,
+        cargo: document.getElementById('p-cargo').value,
+        placa: document.getElementById('p-placa').value.toUpperCase(),
+        empresa: document.getElementById('p-empresa').value,
+        cnpj: document.getElementById('p-cnpj').value
+    };
+    db.perfil = { ...db.perfil, ...p };
+    saveLocal();
+    await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true });
+    alert("✅ Perfil salvo!");
 }
 
 function preencherCamposPerfil() {
-const p = db.perfil;
-document.getElementById('p-nome').value = p.nome || "";
-document.getElementById('p-matrícula').value = p.matricula || "";
-document.getElementById('p-cargo').value = p.cargo || "";
-document.getElementById('p-placa').value = p.placa || "";
-document.getElementById('p-empresa').value = p.empresa || "";
-document.getElementById('p-cnpj').value = p.cnpj || "";
+    const p = db.perfil;
+    document.getElementById('p-nome').value = p.nome || "";
+    document.getElementById('p-matrícula').value = p.matricula || "";
+    document.getElementById('p-cargo').value = p.cargo || "";
+    document.getElementById('p-placa').value = p.placa || "";
+    document.getElementById('p-empresa').value = p.empresa || "";
+    document.getElementById('p-cnpj').value = p.cnpj || "";
 }
 
 function atualizarSelectPostos() {
-const sel = document.getElementById('r-posto');
-const filtroInput = document.getElementById('filtro-posto-ronda');
-const termo = filtroInput ? filtroInput.value.toUpperCase() : "";
+    const sel = document.getElementById('r-posto');
+    const filtroInput = document.getElementById('filtro-posto-ronda');
+    const termo = filtroInput ? filtroInput.value.toUpperCase() : "";
 
-// Limpa o select mas mantém a estrutura
-sel.innerHTML = '';
+    // Limpa o select mas mantém a estrutura
+    sel.innerHTML = '';
+    
+    // Filtra os postos localmente
+    const postosFiltrados = db.postos.filter(p => 
+        p.nome.toUpperCase().includes(termo)
+    );
 
-// Filtra os postos localmente
-const postosFiltrados = db.postos.filter(p =>
-p.nome.toUpperCase().includes(termo)
-);
+    // Se não houver termo de busca, adiciona o "Selecione..."
+    if (termo === "") {
+        sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    }
 
-// Se não houver termo de busca, adiciona o "Selecione..."
-if (termo === "") {
-sel.innerHTML = '<option value="">Selecione o posto...</option>';
-}
+    // Renderiza os que coincidem
+    postosFiltrados.forEach(p => {
+        sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`;
+    });
 
-// Renderiza os que coincidem
-postosFiltrados.forEach(p => {
-sel.innerHTML += <option value="${p.nome}">${p.nome}&lt;/option>;
-});
-
-// Toque de "Instantâneo": Se houver resultados, expande visualmente (opcional)
-// ou apenas garante que o primeiro da busca já seja o valor atual do select
-if (postosFiltrados.length > 0 && termo !== "") {
-sel.value = postosFiltrados[0].nome;
-}
+    // Toque de "Instantâneo": Se houver resultados, expande visualmente (opcional)
+    // ou apenas garante que o primeiro da busca já seja o valor atual do select
+    if (postosFiltrados.length > 0 && termo !== "") {
+        sel.value = postosFiltrados[0].nome;
+    }
 }
 
 function gerenciarIntervalo() {
-const btn = document.getElementById('btn-intervalo');
-if (!db.intervaloAtivo) {
-db.intervaloAtivo = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-btn.innerText = "☕ EM INTERVALO (CLIQUE P/ VOLTAR)";
-btn.style.background = "var(--danger)";
-alert("Intervalo iniciado às " + db.intervaloAtivo);
-} else {
-const fim = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-alert(Intervalo finalizado!\nInício: ${db.intervaloAtivo}\nFim: ${fim});
-db.intervaloAtivo = null;
-btn.innerText = "☕ INICIAR INTERVALO";
-btn.style.background = "#2563eb";
-}
-saveLocal();
+    const btn = document.getElementById('btn-intervalo');
+    if (!db.intervaloAtivo) {
+        db.intervaloAtivo = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        btn.innerText = "☕ EM INTERVALO (CLIQUE P/ VOLTAR)";
+        btn.style.background = "var(--danger)";
+        alert("Intervalo iniciado às " + db.intervaloAtivo);
+    } else {
+        const fim = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+        alert(`Intervalo finalizado!\nInício: ${db.intervaloAtivo}\nFim: ${fim}`);
+        db.intervaloAtivo = null;
+        btn.innerText = "☕ INICIAR INTERVALO";
+        btn.style.background = "#2563eb";
+    }
+    saveLocal();
 }
 
 function toggleCheck(el) { el.classList.toggle('ok'); }
 function toggleFiscalizacao() {
-const m = document.getElementById('r-motivo').value;
-document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
+    const m = document.getElementById('r-motivo').value;
+    document.getElementById('sec-fiscalizacao').style.display = (m === 'Fiscalização') ? 'block' : 'none';
 }
 
 function previewImage(input) {
-if (input.files && input.files[0]) {
-const reader = new FileReader();
-reader.onload = function (e) {
-const img = new Image();
-img.src = e.target.result;
-img.onload = function () {
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
-const maxWidth = 800;
-const scale = maxWidth / img.width;
-canvas.width = maxWidth;
-canvas.height = img.height * scale;
-ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-};
-};
-reader.readAsDataURL(input.files[0]);
-}
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const maxWidth = 800;
+                const scale = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                fotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            };
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
 }
 
 function limparFormRonda() {
-document.getElementById('r-km').value = "";
-document.getElementById('r-obs').value = "";
-document.getElementById('r-func').value = "";
-document.getElementById('r-func-mat').value = "";
-fotoBase64 = "";
-document.getElementById('r-foto').value = "";
-document.getElementById('filtro-posto-ronda').value = "";
+    document.getElementById('r-km').value = "";
+    document.getElementById('r-obs').value = "";
+    document.getElementById('r-func').value = "";
+    document.getElementById('r-func-mat').value = "";
+    fotoBase64 = "";
+    document.getElementById('r-foto').value = "";
+    document.getElementById('filtro-posto-ronda').value = "";
 }
 
 function gerarRelatorioPlantao() {
-const { jsPDF } = window.jspdf;
-const doc = new jsPDF();
-const p = db.perfil;
-let y = 20;
-doc.setFont("helvetica", "bold");
-doc.setFontSize(16);
-doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
-y += 15;
-doc.setFontSize(10);
-doc.text("DADOS DO OPERADOR", 10, y);
-y += 6;
-doc.setFont("helvetica", "normal");
-doc.text(Operador: ${p.nome || "N/A"}, 10, y); doc.text(Cargo: ${p.cargo || "N/A"}, 100, y);
-y += 5;
-doc.text(Matrícula: ${p.matricula || "N/A"}, 10, y); doc.text(Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}, 100, y);
-y += 10;
-doc.setLineWidth(0.5);
-doc.line(10, y, 200, y); y += 10;
-doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
-db.rondas.forEach((r, index) => {
-if(y > 260) { doc.addPage(); y = 20; }
-doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-doc.text(${index + 1}. POSTO: ${r.posto.toUpperCase()}, 10, y);
-y += 5; doc.setFont("helvetica", "normal");
-doc.text(Hora: ${r.hora} | Colaborador: ${r.colaborador}, 15, y);
-y += 5; doc.text(Motivo: ${r.motivo} | KM: ${r.km}, 15, y);
-y += 5;
-const obs = doc.splitTextToSize(r.obs, 180); doc.text(obs, 15, y);
-y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
-});
-doc.save(Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(///g, '-')}.pdf`);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const p = db.perfil;
+    let y = 20;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELATÓRIO DE PLANTÃO OPERACIONAL", 105, y, { align: "center" });
+    y += 15;
+    doc.setFontSize(10);
+    doc.text("DADOS DO OPERADOR", 10, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Operador: ${p.nome || "N/A"}`, 10, y);
+    doc.text(`Cargo: ${p.cargo || "N/A"}`, 100, y);
+    y += 5;
+    doc.text(`Matrícula: ${p.matricula || "N/A"}`, 10, y);
+    doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, 100, y);
+    y += 10;
+    doc.setLineWidth(0.5);
+    doc.line(10, y, 200, y); y += 10;
+    doc.setFont("helvetica", "bold"); doc.text("REGISTROS DE ATIVIDADES", 10, y); y += 8;
+    db.rondas.forEach((r, index) => {
+        if(y > 260) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+        doc.text(`${index + 1}. POSTO: ${r.posto.toUpperCase()}`, 10, y);
+        y += 5; doc.setFont("helvetica", "normal");
+        doc.text(`Hora: ${r.hora} | Colaborador: ${r.colaborador}`, 15, y);
+        y += 5; doc.text(`Motivo: ${r.motivo} | KM: ${r.km}`, 15, y);
+        y += 5; 
+        const obs = doc.splitTextToSize(r.obs, 180); doc.text(obs, 15, y);
+        y += (obs.length * 5) + 5; doc.setDrawColor(200); doc.line(15, y - 2, 195, y - 2); y += 5;
+    });
+    doc.save(`Relatorio_Plantao_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
 }
 
 // ==========================================
-// FUNÇÕES EXCLUSIVAS DO PAINEL ADMIN
+//    FUNÇÕES EXCLUSIVAS DO PAINEL ADMIN
 // ==========================================
 
 async function carregarUsuariosParaAdmin() {
-try {
-const snap = await fs.collection("usuarios").get();
-listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-const sel = document.getElementById('adm-usuario');
-if(!sel) return;
-sel.innerHTML = '<option value="">Selecione o Operador...</option>';
-
-listaUsuariosAdmin.sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
-listaUsuariosAdmin.forEach(u => {
-sel.innerHTML += <option value="${u.id}"> {u.cargo || 'Operador'})</option>`;
-});
-} catch (e) {
-console.error("Erro ao carregar usuários para o painel:", e);
-}
+    try {
+        const snap = await fs.collection("usuarios").get();
+        listaUsuariosAdmin = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        const sel = document.getElementById('adm-usuario');
+        if(!sel) return;
+        sel.innerHTML = '<option value="">Selecione o Operador...</option>';
+        
+        listaUsuariosAdmin.sort((a,b) => (a.nome || "").localeCompare(b.nome || ""));
+        listaUsuariosAdmin.forEach(u => {
+            sel.innerHTML += `<option value="${u.id}">${u.nome || u.email} (${u.cargo || 'Operador'})</option>`;
+        });
+    } catch (e) {
+        console.error("Erro ao carregar usuários para o painel:", e);
+    }
 }
 
 function atualizarVtrAdmin() {
-const uidSelecionado = document.getElementById('adm-usuario').value;
-const usuario = listaUsuariosAdmin.find(u => u.id === uidSelecionado);
-const inputPlaca = document.getElementById('adm-placa');
-if(inputPlaca) {
-inputPlaca.value = usuario ? (usuario.placa || "SEM VTR") : "";
-}
+    const uidSelecionado = document.getElementById('adm-usuario').value;
+    const usuario = listaUsuariosAdmin.find(u => u.id === uidSelecionado);
+    const inputPlaca = document.getElementById('adm-placa');
+    if(inputPlaca) {
+        inputPlaca.value = usuario ? (usuario.placa || "SEM VTR") : "";
+    }
 }
 
 function atualizarSelectPostosAdmin() {
-const sel = document.getElementById('adm-posto');
-if(!sel) return;
-sel.innerHTML = '<option value="">Selecione o posto...</option>';
-db.postos.forEach(p => sel.innerHTML += <option value="${p.nome}">${p.nome}&lt;/option>);
+    const sel = document.getElementById('adm-posto');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Selecione o posto...</option>';
+    db.postos.forEach(p => sel.innerHTML += `<option value="${p.nome}">${p.nome}</option>`);
 }
 
 async function salvarRondaComoAdmin() {
-const uidOperador = document.getElementById('adm-usuario').value;
-const posto = document.getElementById('adm-posto').value;
-const dataInput = document.getElementById('adm-data').value;
-const horaInput = document.getElementById('adm-hora').value;
+    const uidOperador = document.getElementById('adm-usuario').value;
+    const posto = document.getElementById('adm-posto').value;
+    const dataInput = document.getElementById('adm-data').value;
+    const horaInput = document.getElementById('adm-hora').value;
 
-if(!uidOperador) return alert("Selecione o operador que receberá a ronda!");
-if(!posto) return alert("Selecione o posto!");
-if(!dataInput || !horaInput) return alert("Preencha data e hora do evento!");
+    if(!uidOperador) return alert("Selecione o operador que receberá a ronda!");
+    if(!posto) return alert("Selecione o posto!");
+    if(!dataInput || !horaInput) return alert("Preencha data e hora do evento!");
 
-const dataFormatada = dataInput;
-const checklistPadrao = {
-"APRESENTAÇÃO": "OK", "UNIFORME": "OK", "POSTURA": "OK",
-"LIVRO OCO.": "OK", "MATERIAL": "OK", "OUTROS": "OK"
-};
-const novaRondaAdmin = {
-id: Date.now(),
-uid: uidOperador,
-posto: posto,
-motivo: document.getElementById('adm-motivo').value,
-km: document.getElementById('adm-km').value || '0',
-data: dataFormatada,
-hora: horaInput,
-colaborador: document.getElementById('adm-func').value || "N/A",
-obs: document.getElementById('adm-obs').value + " (Lançado via Painel Admin)",
-checklist: checklistPadrao,
-foto: "",
-timestamp: firebase.firestore.FieldValue.serverTimestamp()
-};
-try {
-await fs.collection("rondas").add(novaRondaAdmin);
-document.getElementById('adm-km').value = "";
-document.getElementById('adm-func').value = "";
-document.getElementById('adm-obs').value = "";
-alert("✅ Ronda inserida com sucesso no perfil do operador!");
-} catch(e) {
-alert("Erro técnico ao injetar ronda no banco remoto: " + e.message);
-}
+    const dataFormatada = dataInput;
+    const checklistPadrao = {
+        "APRESENTAÇÃO": "OK", "UNIFORME": "OK", "POSTURA": "OK",
+        "LIVRO OCO.": "OK", "MATERIAL": "OK", "OUTROS": "OK"
+    };
+    const novaRondaAdmin = {
+        id: Date.now(),
+        uid: uidOperador, 
+        posto: posto,
+        motivo: document.getElementById('adm-motivo').value,
+        km: document.getElementById('adm-km').value || '0',
+        data: dataFormatada,
+        hora: horaInput,
+        colaborador: document.getElementById('adm-func').value || "N/A",
+        obs: document.getElementById('adm-obs').value + " (Lançado via Painel Admin)",
+        checklist: checklistPadrao,
+        foto: "", 
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+        await fs.collection("rondas").add(novaRondaAdmin);
+        document.getElementById('adm-km').value = "";
+        document.getElementById('adm-func').value = "";
+        document.getElementById('adm-obs').value = "";
+        alert("✅ Ronda inserida com sucesso no perfil do operador!");
+    } catch(e) {
+        alert("Erro técnico ao injetar ronda no banco remoto: " + e.message);
+    }
 }
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
