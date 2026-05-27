@@ -430,13 +430,18 @@ async function salvarRonda() {
 }
 
 function renderRondas() {
+    const container = document.getElementById('historico-rondas');
+    if (!container) return;
     container.innerHTML = db.rondas.map((r) => `
         <div class="ronda-entry">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                ...
-                <button ...>🖨️ CARD</button>
+                <div>
+                    <strong>${r.hora}</strong> - ${r.posto}<br>
+                    <small>${r.motivo} | KM: ${r.km}</small>
+                </div>
+                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
             </div>
-        </div> <!-- FECHA CORRETAMENTE O CONTAINER EXTERNO! -->
+        </div>
     `).join('');
 }
 
@@ -677,7 +682,6 @@ function previewImage(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
-
 function limparFormRonda() {
     document.getElementById('r-km').value = "";
     document.getElementById('r-obs').value = "";
