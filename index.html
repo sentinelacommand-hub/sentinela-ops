@@ -449,8 +449,7 @@ function renderRondas() {
                     <strong>${r.hora}</strong> - ${r.posto}<br>
                     <small>${r.motivo} | KM: ${r.km}</small>
                 </div>
-                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>        </div>
-    `).join('');
+                <button onclick="alert('ID da Ronda: ${r.id}')" class="btn-small">🖨️</button>
 }
 
 function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
