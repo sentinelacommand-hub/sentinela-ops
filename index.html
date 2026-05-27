@@ -1,4 +1,3 @@
-GENSPARK
 
 
 <!DOCTYPE html>
@@ -253,7 +252,17 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const fs = firebase.firestore();
 
-let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) || { perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
+// ATIVAÇÃO DA PERSISTÊNCIA OFFLINE (Adicione este bloco aqui)
+fs.enablePersistence().catch((err) => {
+    if (err.code == 'failed-precondition') {
+        console.warn("Persistência offline falhou: múltiplas abas do sistema abertas.");
+    } else if (err.code == 'unimplemented') {
+        console.warn("O navegador atual não suporta persistência offline.");
+    }
+});
+
+let db = JSON.parse(localStorage.getItem('sentinela_ops_db')) ||
+{ perfil: {}, postos: [], rondas: [], intervaloAtivo: null };
 let fotoBase64 = "";
 let listaUsuariosAdmin = [];
 
@@ -269,8 +278,10 @@ function gerenciarMenuAdmin() {
 }
 
 // CORREÇÃO: Função de escuta e sincronização temporal revisada
+// CORREÇÃO DEFINITIVA: Sincronização resiliente a falhas de rede e offline
 async function carregarDadosSincronizados(uid) {
     try {
+        // 1. Carrega o Perfil
         const userDoc = await fs.collection("usuarios").doc(uid).get();
         if (userDoc.exists) {
             db.perfil = userDoc.data();
@@ -278,22 +289,42 @@ async function carregarDadosSincronizados(uid) {
             db.perfil = { nome: auth.currentUser.email, role: "operador" };
         }
         
+        // 2. Carrega os Postos
         const postosSnap = await fs.collection("postos").get();
         db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-       const rondasSnap = await fs.collection("rondas").where("uid", "==", uid).get();
-const hoje = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD para consistência
+        // 3. Carrega as Rondas (Traz as últimas 50 do usuário logado, evitando dependência de fuso horário local)
+        const rondasSnap = await fs.collection("rondas")
+            .where("uid", "==", uid)
+            .limit(50)
+            .get();
 
-db.rondas = rondasSnap.docs
-    .map(doc => doc.data())
-    .filter(r => r.data === hoje) // Mantém todas as rondas registradas na data de hoje
-    .sort((a, b) => b.id - a.id); // Garante que a mais recente apareça primeiro 
+        // Mapeia os dados da nuvem
+        const rondasRemotas = rondasSnap.docs.map(doc => doc.data());
+
+        // Mescla com o localStorage para garantir que rondas recém-feitas offline não sumam
+        const mapaRondas = new Map();
+        db.rondas.forEach(r => mapaRondas.set(r.id, r));
+        rondasRemotas.forEach(r => mapaRondas.set(r.id, r));
+
+        // Ordena para exibir sempre a mais recente primeiro
+        db.rondas = Array.from(mapaRondas.values())
+            .sort((a, b) => b.id - a.id);
+        
         saveLocal();
         gerenciarMenuAdmin();
+        
+        // Atualiza a tela de rondas caso o usuário já esteja nela
+        if (document.getElementById('view-rondas').classList.contains('hidden') === false) {
+            renderRondas();
+        }
+        
         showView('home');
     } catch (e) {
-        console.error("Erro na sincronização inicial:", e);
+        console.error("Erro na sincronização (operando em modo offline):", e);
+        // Se falhar por falta de rede, mantém o que está no localStorage e avança para o app
         gerenciarMenuAdmin();
+        showView('home');
     }
 }
 
@@ -363,7 +394,6 @@ async function salvarRonda() {
         id: Date.now(),
         uid: auth.currentUser.uid,
         posto: posto,
-        placa: document.getElementById('r-placa').value || (db.perfil.placa || "N/A"),
         km: document.getElementById('r-km').value || "0",
         colaborador: document.getElementById('r-func').value || "N/A",
         colaboradorMat: document.getElementById('r-func-mat').value || "N/A",
@@ -399,29 +429,15 @@ async function salvarRonda() {
 
 function renderRondas() {
     const container = document.getElementById('historico-rondas');
-
-    if (!db.rondas.length) {
-        container.innerHTML = '<div class="ronda-entry">Nenhuma atividade registrada hoje.</div>';
-        return;
-    }
-
     container.innerHTML = db.rondas.map((r) => `
         <div class="ronda-entry">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <strong>${r.hora}</strong> - ${r.posto}<br>
                     <small>${r.motivo} | KM: ${r.km}</small>
                 </div>
-                <button onclick="reimprimirCardPorId(${r.id})" class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
-            </div>
-        </div>
+                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>        </div>
     `).join('');
-}
-
-function reimprimirCardPorId(id) {
-    const ronda = db.rondas.find(r => r.id === id);
-    if (!ronda) return alert("Ronda não encontrada para reimpressão.");
-    gerarCardIndividual(ronda);
 }
 
 function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
@@ -442,8 +458,9 @@ function gerarCardIndividual(r) {
     doc.setFont("helvetica", "normal");
     doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
     y += 5;
-    const placaUsada = r.placa || document.getElementById('r-placa').value || db.perfil.placa || "---";
-    doc.text(`VTR: ${placaUsada} | KM: ${r.km}`, 5, y);
+    // Captura a placa que estava no campo da ronda no momento
+const placaUsada = document.getElementById('r-placa').value || "---";
+doc.text(`VTR: ${placaUsada} | KM: ${r.km}`, 5, y);
     y += 5;
     doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()} | MAT: ${r.colaboradorMat || "---"}`, 5, y);
     y += 8;
@@ -490,19 +507,20 @@ function renderPostos() {
     if (btnNovoPosto) btnNovoPosto.style.display = isAdmin() ? "block" : "none";
     const filtrados = db.postos.filter(p => p.nome.includes(busca));
     container.innerHTML = filtrados.map((p, i) => `
-        <div class="posto-item">
-            <div style="flex:1;">
-                <b>${p.nome}</b><br><small>${p.endereco}</small>
-            </div>
-            <div style="display:flex;">
-                <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
-                ${isAdmin() ? `
-                    <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
-                    <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
-                ` : ""}
-            </div>
+    <div class="posto-item">
+        <div style="flex:1;">
+            <b>${p.nome}</b><br><small>${p.endereco}</small>
         </div>
-    `).join('');
+        <div style="display:flex;">
+            <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.endereco)}', '_blank')" class="btn-small" style="background:#238636;">ROTA</button>
+            
+            ${isAdmin() ? `
+                <button onclick="editarPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#2563eb;">✏️</button>
+                <button onclick="excluirPosto('${p.id}', ${db.postos.indexOf(p)})" class="btn-small" style="background:#f85149;">🗑️</button>
+            ` : ""}      
+        </div>
+    </div>
+`).join('');
 }
 
 async function editarPosto(id, index) {
@@ -623,9 +641,9 @@ function gerenciarIntervalo() {
         btn.style.background = "var(--danger)";
         alert("Intervalo iniciado às " + db.intervaloAtivo);
     } else {
-        const fim = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-        alert(`Intervalo finalizado!\nInício: ${db.intervaloAtivo}\nFim: ${fim}`);
-        db.intervaloAtivo = null;
+    const fim = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+    alert(`Intervalo finalizado!\nInício: ${db.intervaloAtivo}\nFim: ${fim}`);
+    db.intervaloAtivo = null;
         btn.innerText = "☕ INICIAR INTERVALO";
         btn.style.background = "#2563eb";
     }
@@ -762,7 +780,6 @@ async function salvarRondaComoAdmin() {
         id: Date.now(),
         uid: uidOperador, 
         posto: posto,
-        placa: document.getElementById('adm-placa').value || "SEM VTR",
         motivo: document.getElementById('adm-motivo').value,
         km: document.getElementById('adm-km').value || '0',
         data: dataFormatada,
