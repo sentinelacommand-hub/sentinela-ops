@@ -1,3 +1,6 @@
+GENSPARK
+
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -360,6 +363,7 @@ async function salvarRonda() {
         id: Date.now(),
         uid: auth.currentUser.uid,
         posto: posto,
+        placa: document.getElementById('r-placa').value || (db.perfil.placa || "N/A"),
         km: document.getElementById('r-km').value || "0",
         colaborador: document.getElementById('r-func').value || "N/A",
         colaboradorMat: document.getElementById('r-func-mat').value || "N/A",
@@ -395,15 +399,29 @@ async function salvarRonda() {
 
 function renderRondas() {
     const container = document.getElementById('historico-rondas');
+
+    if (!db.rondas.length) {
+        container.innerHTML = '<div class="ronda-entry">Nenhuma atividade registrada hoje.</div>';
+        return;
+    }
+
     container.innerHTML = db.rondas.map((r) => `
         <div class="ronda-entry">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
                 <div>
                     <strong>${r.hora}</strong> - ${r.posto}<br>
                     <small>${r.motivo} | KM: ${r.km}</small>
                 </div>
-                <button onclick='reimprimirCard(${JSON.stringify(r).replace(/'/g, "'")})' class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>        </div>
+                <button onclick="reimprimirCardPorId(${r.id})" class="btn-small" style="background:var(--accent); color:#000;">🖨️ CARD</button>
+            </div>
+        </div>
     `).join('');
+}
+
+function reimprimirCardPorId(id) {
+    const ronda = db.rondas.find(r => r.id === id);
+    if (!ronda) return alert("Ronda não encontrada para reimpressão.");
+    gerarCardIndividual(ronda);
 }
 
 function reimprimirCard(ronda) { gerarCardIndividual(ronda); }
@@ -424,9 +442,8 @@ function gerarCardIndividual(r) {
     doc.setFont("helvetica", "normal");
     doc.text(`Data: ${r.data} | Hora: ${r.hora}`, 5, y);
     y += 5;
-    // Captura a placa que estava no campo da ronda no momento
-const placaUsada = document.getElementById('r-placa').value || "---";
-doc.text(`VTR: ${placaUsada} | KM: ${r.km}`, 5, y);
+    const placaUsada = r.placa || document.getElementById('r-placa').value || db.perfil.placa || "---";
+    doc.text(`VTR: ${placaUsada} | KM: ${r.km}`, 5, y);
     y += 5;
     doc.text(`COLABORADOR: ${r.colaborador.toUpperCase()} | MAT: ${r.colaboradorMat || "---"}`, 5, y);
     y += 8;
@@ -745,6 +762,7 @@ async function salvarRondaComoAdmin() {
         id: Date.now(),
         uid: uidOperador, 
         posto: posto,
+        placa: document.getElementById('adm-placa').value || "SEM VTR",
         motivo: document.getElementById('adm-motivo').value,
         km: document.getElementById('adm-km').value || '0',
         data: dataFormatada,
