@@ -293,14 +293,18 @@ async function carregarDadosSincronizados(uid) {
         const postosSnap = await fs.collection("postos").get();
         db.postos = postosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // 3. Carrega as Rondas (Traz as últimas 50 do usuário logado, evitando dependência de fuso horário local)
+        // 3. Carrega as Rondas (Traz as últimas 50 do utilizador logado, evitando dependência de fuso horário local)
         const rondasSnap = await fs.collection("rondas")
             .where("uid", "==", uid)
             .limit(50)
             .get();
 
         // Mapeia os dados da nuvem
-        const rondasRemotas = rondasSnap.docs.map(doc => doc.data());
+        const rondasRemotasCompletas = rondasSnap.docs.map(doc => doc.data());
+
+        // FILTRO INTELIGENTE: Ignora as rondas descarregadas que pertencem a plantões anteriores ao último zeramento
+        const dataZeramento = db.perfil.ultimoZeramento || 0;
+        const rondasRemotas = rondasRemotasCompletas.filter(r => r.id > dataZeramento);
 
         // Mescla com o localStorage para garantir que rondas recém-feitas offline não sumam
         const mapaRondas = new Map();
@@ -308,9 +312,7 @@ async function carregarDadosSincronizados(uid) {
         rondasRemotas.forEach(r => mapaRondas.set(r.id, r));
 
         // Ordena para exibir sempre a mais recente primeiro
-        db.rondas = Array.from(mapaRondas.values())
-            .sort((a, b) => b.id - a.id);
-        
+        db.rondas = Array.from(mapaRondas.values()).sort((a, b) => b.id - a.id);        
         saveLocal();
         gerenciarMenuAdmin();
         
