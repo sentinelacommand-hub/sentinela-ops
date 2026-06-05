@@ -85,13 +85,17 @@
         <p style="color: #94a3b8; font-size: 0.8rem;">SISTEMA OPERACIONAL EM NUVEM</p>
     </div>
     <div class="card">
-        <h3>ACESSO RESTRITO</h3>
-        <label>Email Operacional</label>
-        <input type="email" id="login-email" placeholder="seu@email.com">
-        <label>Senha</label>
-        <input type="password" id="login-senha" placeholder="******">
-        <button class="btn btn-primary" onclick="login()">ENTRAR</button>
-        <button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
+    <h3>ACESSO RESTRITO</h3>
+    <label>Email Operacional</label>
+    <input type="email" id="login-email" placeholder="seu@email.com">
+    <label>Senha</label>
+    <input type="password" id="login-senha" placeholder="******">
+    <button class="btn btn-primary" onclick="login()">ENTRAR</button>
+    <button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
+    
+    <!-- ADICIONADO: Link de Recuperação de Senha -->
+    <div style="text-align: center; margin-top: 18px;">
+        <a href="#" onclick="recuperarSenha(); return false;" style="color: #94a3b8; font-size: 0.85rem; text-decoration: none; border-bottom: 1px solid #475569; padding-bottom: 2px;">Esqueci minha senha</a>
     </div>
 </div>
 
@@ -371,6 +375,28 @@ function cadastrar() {
     const e = document.getElementById('login-email').value;
     const s = document.getElementById('login-senha').value;
     auth.createUserWithEmailAndPassword(e, s).then(() => alert("Conta criada!")).catch(err => alert(err.message));
+}
+
+// ADICIONADO: Função para recuperar a senha
+function recuperarSenha() {
+    const email = document.getElementById('login-email').value;
+    
+    if (!email) {
+        return alert("Por favor, digite seu e-mail no campo acima antes de clicar em 'Esqueci minha senha'.");
+    }
+
+    auth.sendPasswordResetEmail(email)
+        .then(() => {
+            alert("✅ Link de recuperação enviado! Verifique sua caixa de entrada (e também o Lixo Eletrônico/Spam).");
+        })
+        .catch(err => {
+            // Tratamento amigável para o erro mais comum
+            if (err.code === 'auth/user-not-found') {
+                alert("Erro: Este e-mail não está cadastrado no sistema.");
+            } else {
+                alert("Erro ao tentar recuperar a senha: " + err.message);
+            }
+        });
 }
 
 function logout() { auth.signOut(); }
