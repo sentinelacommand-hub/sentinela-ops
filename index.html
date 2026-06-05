@@ -79,27 +79,10 @@
 </head>
 <body>
 
-<div id="view-login" class="container">
-    <div style="text-align: center; padding: 50px 0;">
-        <h1 style="color: var(--accent); letter-spacing: 3px; margin:0;">SENTINELA OPS</h1>
-        <p style="color: #94a3b8; font-size: 0.8rem;">SISTEMA OPERACIONAL EM NUVEM</p>
-    </div>
-    <div class="card">
-    <h3>ACESSO RESTRITO</h3>
-    <label>Email Operacional</label>
-    <input type="email" id="login-email" placeholder="seu@email.com">
-    <label>Senha</label>
-    <input type="password" id="login-senha" placeholder="******">
-    <button class="btn btn-primary" onclick="login()">ENTRAR</button>
-    <button class="btn btn-info" onclick="cadastrar()" style="background: transparent; border: 1px solid #475569;">CRIAR CONTA</button>
-    
-    <!-- ADICIONADO: Link de Recuperação de Senha -->
-    <div style="text-align: center; margin-top: 18px;">
-        <a href="#" onclick="recuperarSenha(); return false;" style="color: #94a3b8; font-size: 0.85rem; text-decoration: none; border-bottom: 1px solid #475569; padding-bottom: 2px;">Esqueci minha senha</a>
-    </div>
-</div>
-
-<div id="app-content" class="hidden">
+<div style="text-align: center; margin-top: 18px;">
+            <a href="#" onclick="recuperarSenha(); return false;" style="color: #94a3b8; font-size: 0.85rem; text-decoration: none; border-bottom: 1px solid #475569; padding-bottom: 2px;">Esqueci minha senha</a>
+        </div>
+    </div> </div> <div id="app-content" class="hidden">
     <div class="header">
         <h1>SENTINELA OPS</h1>
         <div onclick="logout()" style="cursor:pointer; font-size: 1.2rem;">🚪</div>
