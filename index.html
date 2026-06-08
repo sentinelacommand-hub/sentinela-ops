@@ -373,7 +373,20 @@ function login() {
 function cadastrar() {
     const e = document.getElementById('login-email').value;
     const s = document.getElementById('login-senha').value;
-    auth.createUserWithEmailAndPassword(e, s).then(() => alert("Conta criada!")).catch(err => alert(err.message));
+    
+    if(!e || !s) return alert("Preencha os campos!");
+
+    auth.createUserWithEmailAndPassword(e, s)
+        .then(async (cred) => {
+            // Cria o documento base no Firestore imediatamente após o cadastro
+            await fs.collection("usuarios").doc(cred.user.uid).set({
+                email: e,
+                role: 'operador', // Exigido pela regra de segurança
+                status: 'ativo'   // Exigido pela regra de segurança
+            });
+            alert("✅ Conta criada com sucesso! Você já pode acessar o sistema.");
+        })
+        .catch(err => alert("Erro ao criar conta: " + err.message));
 }
 
 // ADICIONADO: Função para recuperar a senha
@@ -629,10 +642,17 @@ async function salvarPerfil() {
         empresa: document.getElementById('p-empresa').value,
         cnpj: document.getElementById('p-cnpj').value
     };
+    
     db.perfil = { ...db.perfil, ...p };
     saveLocal();
-    await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true });
-    alert("✅ Perfil salvo!");
+    
+    try {
+        // O merge: true fará apenas a atualização dos dados, preservando o role e status criados no cadastro
+        await fs.collection("usuarios").doc(auth.currentUser.uid).set(p, { merge: true });
+        alert("✅ Perfil salvo no Cloud!");
+    } catch (e) {
+        alert("Erro técnico ao salvar perfil: " + e.message);
+    }
 }
 
 function preencherCamposPerfil() {
